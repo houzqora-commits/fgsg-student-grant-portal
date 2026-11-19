@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<div class="demo-banner">🏁 Competition Demo — Presentation Prototype Only &nbsp;·&nbsp; <span>Not an official Federal Government portal. Nothing you type here is sent, saved or charged — never enter a real password, NIN or bank details.</span></div>
+<div class="demo-banner">🏁 Competition Demo — Presentation Prototype Only &nbsp;·&nbsp; <span>Not an official Federal Government portal. Accounts are saved only in this browser with hashed passwords and nothing is sent to a server or charged — never enter a real password, NIN or bank details.</span></div>
 
 <header class="site">
   <div class="header-in">
@@ -24,8 +24,8 @@
       <a href="#guidelines" onclick="goLandingAnchor(event,'guidelines')">Guidelines</a>
       <a href="#faqs" onclick="goLandingAnchor(event,'faqs')">FAQs</a>
       <a href="#help" onclick="goLandingAnchor(event,'help')">Help Desk</a>
-      <a href="#auth" onclick="goPage('auth','login');return false;">Log in</a>
-      <a class="btn btn-lime" href="#auth" onclick="goPage('auth','signup');return false;">Apply — Demo</a>
+      <a href="#auth" id="navLoginLink" onclick="goPage('auth','login');return false;">Log in</a>
+      <a class="btn btn-lime" id="navApplyLink" href="#auth" onclick="goPage('auth','signup');return false;">Apply — Demo</a>
     </nav>
   </div>
 </header>
@@ -101,6 +101,7 @@
   <details><summary>What is the liveness check?</summary><div class="a">A real face scan that confirms a live, present person is completing the application. Your camera opens and guides you to centre your face, turn left, turn right, tilt up, tilt down, then blink — each move is detected live before the check passes. It protects grants from being claimed with someone else's documents or a photo. The scan runs entirely on your device: no video is recorded, uploaded or saved.</div></details>
   <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">On Step 5, tap “Pay ₦3,000 with Paystack” and pay by card, bank transfer, USSD or bank account. Paystack confirms the payment and gives you a reference before you move to payout. In this competition demo Paystack runs in test mode, so no real charge is made and no real payment details are taken.</div></details>
   <details><summary>How do I receive the grant after verification?</summary><div class="a">You choose at the final step: the grant can land in your FGSG Site Wallet, or be paid directly into your bank account.</div></details>
+  <details><summary>Where is my account saved?</summary><div class="a">Only in your own browser, on this device. Signing up saves your name, email and a securely hashed password (PBKDF2 — the real password is never stored), and logging in checks your password against that hash. There is no server account and no email confirmation; clearing your browser data deletes the account, and it will not appear on another phone or computer. Repeated wrong passwords pause logins briefly, and your NIN and bank details are never saved with the account.</div></details>
   <details><summary>Is this the live application portal?</summary><div class="a">No — this is a design-competition presentation prototype. It demonstrates the complete look and flow, but it does not accept real applications, payments, NINs or bank details.</div></details>
 </section>
 
@@ -118,7 +119,7 @@
 <div class="page" id="page-auth">
   <div class="auth-wrap">
     <h2>Your <span>Account</span></h2>
-    <p class="auth-sub">Log in, create an account, or reset a forgotten password.</p>
+    <p class="auth-sub">Log in, create an account, or reset a forgotten password. Accounts are saved only in this browser — no email is sent.</p>
     <div class="auth-card">
       <div class="auth-tabs" role="tablist" aria-label="Account">
         <button type="button" class="auth-tab on" data-auth-tab="login" onclick="switchAuthTab('login')">Log in</button>
@@ -128,27 +129,33 @@
 
       <div class="auth-panel on" data-auth-panel="login">
         <h3>Log in</h3>
-        <label class="f">Email address <span class="req">*</span><input type="email" id="authLoginEmail" placeholder="you@example.com" autocomplete="off"></label>
-        <label class="f">Password <span class="req">*</span><input type="password" id="authLoginPass" placeholder="Your password" autocomplete="off"></label>
-        <button type="button" class="btn btn-green" onclick="authLogin()">Log in →</button>
-        <div class="demo-note"><b>Demo safety:</b> this prototype has no server and saves nothing. Use a made-up email and password — never your real ones.</div>
+        <label class="f">Email address <span class="req">*</span><input type="email" id="authLoginEmail" placeholder="you@example.com" autocomplete="email"></label>
+        <label class="f">Password <span class="req">*</span><input type="password" id="authLoginPass" placeholder="Your password" autocomplete="current-password"></label>
+        <button type="button" class="btn btn-green" id="loginBtn" onclick="authLogin()">Log in →</button>
+        <div class="auth-msg" id="loginMsg" role="alert"></div>
+        <div class="demo-note"><b>Browser account:</b> your account is stored only in this browser and your password is checked against its saved hash — it is never stored in plain text. Use a demo password, never a real one. No account on this device yet? Use the Sign up tab first.</div>
       </div>
 
       <div class="auth-panel" data-auth-panel="signup">
         <h3>Create your account</h3>
-        <label class="f">Full name <span class="req">*</span><input type="text" id="authSuName" placeholder="e.g. Adaeze Chiamaka Okafor" autocomplete="off"></label>
-        <label class="f">Email address <span class="req">*</span><input type="email" id="authSuEmail" placeholder="you@example.com" autocomplete="off"></label>
-        <label class="f">Password <span class="req">*</span><input type="password" id="authSuPass" placeholder="Create a password" autocomplete="off"></label>
-        <label class="f">Confirm password <span class="req">*</span><input type="password" id="authSuPass2" placeholder="Repeat the password" autocomplete="off"></label>
-        <button type="button" class="btn btn-green" onclick="authSignup()">Create Account →</button>
-        <div class="demo-note"><b>Demo safety:</b> nothing is registered or stored. Your details only pre-fill the demo application on this device.</div>
+        <label class="f">Full name <span class="req">*</span><input type="text" id="authSuName" placeholder="e.g. Adaeze Chiamaka Okafor" autocomplete="name"></label>
+        <label class="f">Email address <span class="req">*</span><input type="email" id="authSuEmail" placeholder="you@example.com" autocomplete="email"></label>
+        <label class="f">Password <span class="req">*</span><input type="password" id="authSuPass" placeholder="Create a password" autocomplete="new-password"><small>At least 8 characters, with a letter and a number.</small></label>
+        <label class="f">Confirm password <span class="req">*</span><input type="password" id="authSuPass2" placeholder="Repeat the password" autocomplete="new-password"></label>
+        <button type="button" class="btn btn-green" id="signupBtn" onclick="authSignup()">Create Account →</button>
+        <div class="auth-msg" id="signupMsg" role="alert"></div>
+        <div class="demo-note"><b>Saved in this browser:</b> signing up saves your name, email and a securely hashed password on this device only — no server, no email confirmation. One account per email on this device. Your NIN and bank details are never saved with your account.</div>
       </div>
 
       <div class="auth-panel" data-auth-panel="forgot">
         <h3>Forgot password</h3>
-        <label class="f">Email address <span class="req">*</span><input type="email" id="authForgotEmail" placeholder="you@example.com" autocomplete="off"></label>
-        <button type="button" class="btn btn-green" onclick="authForgot()">Send Reset Link</button>
-        <div class="auth-ok" id="forgotOk"><b>Reset requested.</b> In the live concept a password reset link goes to that email address. In this demo no email is sent — go back to <b>Log in</b> and continue with any demo password.</div>
+        <p class="hint" style="color:#4c554c;font-size:14.5px;line-height:1.6;margin-bottom:16px">No email is sent. Your account lives only in this browser, so the reset happens here, on this device.</p>
+        <label class="f">Email address <span class="req">*</span><input type="email" id="authForgotEmail" placeholder="you@example.com" autocomplete="email"></label>
+        <label class="f">New password <span class="req">*</span><input type="password" id="authForgotPass" placeholder="Create a new password" autocomplete="new-password"><small>At least 8 characters, with a letter and a number.</small></label>
+        <label class="f">Confirm new password <span class="req">*</span><input type="password" id="authForgotPass2" placeholder="Repeat the new password" autocomplete="new-password"></label>
+        <button type="button" class="btn btn-green" id="forgotBtn" onclick="authForgot()">Reset Password</button>
+        <div class="auth-msg" id="forgotMsg" role="alert"></div>
+        <div class="auth-ok" id="forgotOk"><b>Password reset on this device.</b> Go to <b>Log in</b> and sign in with your new password.</div>
       </div>
     </div>
     <a class="auth-back" href="#top" onclick="goPage('landing');return false;">← Back to home</a>
@@ -198,10 +205,10 @@
           <h3>Login details</h3>
           <p class="hint">Your account is how you return to check your application, wallet and notices.</p>
           <div class="fgrid">
-            <label class="f">Email address <span class="req">*</span><input type="email" id="fEmail" placeholder="you@example.com" autocomplete="off"></label>
-            <label class="f">Password <span class="req">*</span><input type="password" id="fPass" placeholder="Create a password" autocomplete="off"></label>
+            <label class="f">Email address <span class="req">*</span><input type="email" id="fEmail" placeholder="you@example.com" autocomplete="email"></label>
+            <label class="f">Password <span class="req">*</span><input type="password" id="fPass" placeholder="Your account password" autocomplete="current-password"></label>
           </div>
-          <div class="demo-note"><b>Demo safety:</b> this prototype has no server and saves nothing. Use a made-up email and password for the presentation — never your real ones.</div>
+          <div class="demo-note"><b>Account check:</b> this step is checked against the account saved in this browser — the password must match its saved hash. Nothing is sent to a server. Never use a real password for the presentation.</div>
         </div>
 
         <!-- STEP 2 -->
@@ -380,7 +387,8 @@
       <div class="card-w">
         <h3>My Profile</h3>
         <p id="profileSummary">No demo profile yet. Start the application and your details will be summarised here as you go — on this device only, for the presentation.</p>
-        <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-green" onclick="showView('application')">Go to Application →</button><button class="btn btn-outline-dark" onclick="goPage('landing')">Log out</button></div>
+        <div class="account-box" id="accountBox">No account is signed in on this device.</div>
+        <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-green" onclick="showView('application')">Go to Application →</button><button class="btn btn-outline-dark" onclick="authLogout()">Log out</button><button class="btn btn-outline-dark" id="deleteAcctBtn" onclick="authDeleteAccount()">Delete Account</button></div>
       </div>
     </div>
 
@@ -400,7 +408,7 @@
 <footer>
   <div class="foot-in">
     <p><b>FGSG — Federal Government Student Grant (Concept).</b> …Empowering Nigerian Students for a Brighter Future.</p>
-    <p><b>Presentation notice:</b> This website was built for an internal design competition and is a prototype for presentation only. It is not an official Federal Government of Nigeria website, it is not connected to any government programme, and it does not collect, store or transmit applications, passwords, NINs, documents or payments. The ₦3,000 verification fee is shown through Paystack in test mode and all payout screens are simulated for demonstration — no real charge is made.</p>
+    <p><b>Presentation notice:</b> This website was built for an internal design competition and is a prototype for presentation only. It is not an official Federal Government of Nigeria website and it is not connected to any government programme. Demo accounts are stored only in your own browser, with passwords kept as secure hashes — nothing is transmitted to a server, and applications, NINs, documents and bank details are not stored. The ₦3,000 verification fee is shown through Paystack in test mode and all payout screens are simulated for demonstration — no real charge is made.</p>
   </div>
 </footer>
 
@@ -448,6 +456,7 @@
 
 <div class="toast" id="toast" role="status"></div>
 
+<script src="assets/auth.js"></script>
 <script src="assets/app.js"></script>
 <script src="assets/liveness.js"></script>
 <script src="assets/payment.js"></script>

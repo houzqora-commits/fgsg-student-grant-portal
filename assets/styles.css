@@ -123,6 +123,12 @@ section.block{max-width:1180px;margin:0 auto;padding:64px 20px}
 .auth-panel label.f{margin-bottom:14px}
 .auth-panel .btn{width:100%;margin-top:4px}
 .auth-ok{display:none;background:#eef7ee;border:1px dashed var(--green);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;color:#274435;margin-top:14px}
+.auth-msg{display:none;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;margin-top:12px;font-weight:600}
+.auth-msg.show{display:block}
+.auth-msg.err{background:#fdf0ef;border:1px solid #b3261e;color:#7c1a14}
+.auth-msg.ok{background:#eef7ee;border:1px solid var(--green);color:#274435}
+.account-box{background:#f2f9f2;border:1.5px solid var(--green);border-radius:14px;padding:16px 18px;font-size:15px;line-height:1.65;margin-top:16px;color:#274435}
+.account-box span{color:#4c554c;font-size:14px}
 .auth-back{display:block;text-align:center;margin-top:22px;color:var(--lime-soft);font-weight:700;text-decoration:none}
 .auth-back:hover{text-decoration:underline}
 /* transfer highlight */

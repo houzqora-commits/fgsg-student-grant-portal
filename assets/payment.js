@@ -105,7 +105,8 @@ document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.addEventLi
 
 function renderProfile(){
   var name=val('fName'), school=val('fSchool');
-  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+(name||'Demo Applicant')+'</b>'+(school?'<br>'+school:'')+(val('fDept')?'<br>'+val('fDept'):'')+(val('fLevel')?'<br>'+val('fLevel'):'')+(val('fState')?'<br>'+val('fState')+(val('fLga')?' · '+val('fLga')+' LGA':''):''); }
+  var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
+  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Demo Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
 }
 function submitDemo(){
   step=7; renderStep();
@@ -113,8 +114,9 @@ function submitDemo(){
   document.getElementById('refCode').textContent=ref;
   var pay=document.querySelector('input[name="pay"]:checked').value;
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';
-  document.getElementById('successSummary').textContent='Well done, '+name.split(' ')[0]+'. This demo application for '+school+' was filed with payout via '+pay+'. Reference: '+ref+'. Nothing was sent, saved or charged.';
-  document.getElementById('bankSummary').innerHTML='Payout method confirmed in demo: <b>'+pay+'</b>.'+(pay==='Bank Account'&&val('fBank')?' Bank: <b>'+val('fBank')+'</b>, account ending •••'+(val('fAcct').slice(-3)||'000')+'.':' Your grant would land in your FGSG Site Wallet on activation.');
+  document.getElementById('successSummary').textContent='Well done, '+name.split(' ')[0]+'. This demo application for '+school+' was filed with payout via '+pay+'. Reference: '+ref+'. Nothing was sent or charged.';
+  var esc2=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
+  document.getElementById('bankSummary').innerHTML='Payout method confirmed in demo: <b>'+esc2(pay)+'</b>.'+(pay==='Bank Account'&&val('fBank')?' Bank: <b>'+esc2(val('fBank'))+'</b>, account ending •••'+esc2(val('fAcct').slice(-3)||'000')+'.':' Your grant would land in your FGSG Site Wallet on activation.');
   document.getElementById('walletStatus').textContent = pay==='Site Wallet' ? 'Verified in demo — grant would land in this wallet on payout day.' : 'Verified in demo — grant would be paid directly to your bank account.';
   renderProfile();
   toast('Demo application filed — '+ref);

@@ -26,6 +26,12 @@ function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.c
 
 /* ---------- page routing: landing / auth / app are separate pages ---------- */
 function goPage(page,authTab){
+  /* proper auth check: the dashboard only opens with a live
+     browser session — otherwise route to the Auth page */
+  if(page==='app' && window.FGSGAuth && !FGSGAuth.currentUser()){
+    toast('Log in or create an account first — accounts live in this browser');
+    page='auth'; if(!authTab) authTab='login';
+  }
   if(page!=='app' && typeof liveRunning!=='undefined' && liveRunning && typeof liveReset==='function'){ liveReset(); }
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById('page-'+page); if(el) el.classList.add('active');
@@ -42,29 +48,9 @@ function switchAuthTab(name){
   document.querySelectorAll('[data-auth-tab]').forEach(function(t){t.classList.toggle('on',t.dataset.authTab===name)});
   document.querySelectorAll('[data-auth-panel]').forEach(function(p){p.classList.toggle('on',p.dataset.authPanel===name)});
 }
-function authEmailOk(v){ return v && v.indexOf('@')>0 && v.indexOf('.')>v.indexOf('@'); }
-function authLogin(){
-  var e=document.getElementById('authLoginEmail').value.trim(), p=document.getElementById('authLoginPass').value;
-  if(!authEmailOk(e)){ toast('Enter a demo email address to log in'); return; }
-  if(!p){ toast('Enter a demo password to log in'); return; }
-  document.getElementById('fEmail').value=e; document.getElementById('fPass').value=p;
-  enterApp('home'); toast('Welcome back — demo login');
-}
-function authSignup(){
-  var n=document.getElementById('authSuName').value.trim(), e=document.getElementById('authSuEmail').value.trim(),
-      p=document.getElementById('authSuPass').value, p2=document.getElementById('authSuPass2').value;
-  if(!n){ toast('Enter your full name to sign up'); return; }
-  if(!authEmailOk(e)){ toast('Enter a demo email address to sign up'); return; }
-  if(!p){ toast('Create a demo password to sign up'); return; }
-  if(p!==p2){ toast('The two passwords do not match'); return; }
-  document.getElementById('fName').value=n; document.getElementById('fEmail').value=e; document.getElementById('fPass').value=p;
-  enterApp('application'); toast('Account created — demo only');
-}
-function authForgot(){
-  var e=document.getElementById('authForgotEmail').value.trim();
-  if(!authEmailOk(e)){ toast('Enter the email address for the account'); return; }
-  document.getElementById('forgotOk').style.display='block';
-}
+/* authLogin / authSignup / authForgot / authLogout live in
+   auth.js, backed by the browser-built-in account store
+   (FGSGAuth) with hashed passwords and real checks. */
 /* dock highlighter: a sliding lime pill glides behind the active tab */
 function moveDockIndicator(){
   var btn=document.querySelector('.dock button.active'), ind=document.getElementById('dockIndicator');
@@ -101,15 +87,58 @@ function renderStep(){
   if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'demo@fgsg.demo'); }
 }
 function val(id){return document.getElementById(id).value.trim();}
+/* Step 1 is checked against the browser account store: the
+   password must match the saved hash for that email, a new
+   email creates the account (hashed), and a signed-in user
+   whose email matches may continue without re-typing. */
+function validateStep1Async(){
+  var email=val('fEmail'), pw=document.getElementById('fPass').value;
+  if(!window.FGSGAuth){
+    if(!email||email.indexOf('@')<0){toast('Enter an email address to continue');return Promise.resolve(false);}
+    if(!pw){toast('Create a password to continue');return Promise.resolve(false);}
+    return Promise.resolve(true);
+  }
+  if(!FGSGAuth.validEmail(email)){ toast('Enter a valid email address to continue'); return Promise.resolve(false); }
+  var user=FGSGAuth.currentUser();
+  if(user && user.email===email.toLowerCase()){
+    if(!pw) return Promise.resolve(true);
+    return FGSGAuth.verifyPassword(email,pw).then(function(ok){
+      if(!ok) toast('That password does not match the account saved in this browser');
+      return ok;
+    });
+  }
+  var existing=FGSGAuth.findUser(email);
+  if(existing){
+    if(!pw){ toast('This email already has an account on this device — enter its password'); return Promise.resolve(false); }
+    return FGSGAuth.verifyPassword(email,pw).then(function(ok){
+      if(!ok){ toast('That password does not match the account saved in this browser'); return false; }
+      FGSGAuth.startSession(email); if(typeof updateAuthUI==='function') updateAuthUI();
+      return true;
+    });
+  }
+  var perr=FGSGAuth.passwordError(pw);
+  if(perr){ toast(perr); return Promise.resolve(false); }
+  var nm=val('fName')||email.split('@')[0];
+  return FGSGAuth.signup(nm,email,pw).then(function(){
+    if(typeof updateAuthUI==='function') updateAuthUI();
+    return true;
+  }).catch(function(err){ toast(err.message); return false; });
+}
 function validateStep(){
-  if(step===1){ if(!val('fEmail')||val('fEmail').indexOf('@')<0){toast('Enter a demo email address to continue');return false;} if(!val('fPass')){toast('Create a demo password to continue');return false;} }
+  if(step===1){ if(!val('fEmail')||val('fEmail').indexOf('@')<0){toast('Enter an email address to continue');return false;} if(!val('fPass')){toast('Create a password to continue');return false;} }
   if(step===2){ if(!val('fName')||!val('fDob')||!val('fState')||!val('fLga')){toast('Complete name, date of birth, state of origin and LGA');return false;} }
   if(step===3){ if(!val('fType')||!val('fLevel')||!val('fSchool')||!val('fDept')){toast('Complete institution type, level, institution and department');return false;} }
   if(step===4){ if(!document.getElementById('upJamb').files.length){toast('Attach your JAMB admission letter (demo file)');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 dummy digits in the NIN demo field');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
   if(step===5){ if(!feeDone){toast('Pay the ₦3,000 verification fee with Paystack to continue');return false;} }
   return true;
 }
-document.getElementById('nextBtn').addEventListener('click',function(){
+document.getElementById('nextBtn').addEventListener('click',async function(){
+  if(step===1){
+    var ok1=await validateStep1Async();
+    if(!ok1) return;
+    step++; renderStep(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
+    return;
+  }
   if(step<6){ if(!validateStep())return; step++; renderStep(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
   else if(step===6){ submitDemo(); }
 });
