@@ -202,50 +202,58 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,135,81,.35);bor
 .btn-outline-dark{background:#fff;color:#0b0d0b;border-color:#0b0d0b}
 .btn[disabled]{opacity:.45;cursor:not-allowed}
 
-/* liveness — real camera scan */
+/* liveness — real camera scan.
+   Step 4 shows only the Face Scan / Liveness Check button. The scan
+   itself runs in a full-screen popup, and every instruction and
+   status line is overlaid on the camera view — no arrows, and
+   nothing sits under the frame. */
 .live-section{margin-top:var(--s7);padding-top:var(--s6);border-top:1px solid #e3e8e3}
 .live-heading{font-weight:800;font-family:Archivo;font-size:19px;line-height:1.3;margin-bottom:var(--s4);text-align:center}
-.live-wrap{max-width:430px;margin:0 auto}
-.live-frame{width:min(330px,88vw);aspect-ratio:3/3.9;margin:0 auto var(--s4);border-radius:26px;border:3px solid var(--green);background:radial-gradient(circle at 50% 36%,#dfe8df 0 46px,#c3d2c3 47px 48px,transparent 49px),radial-gradient(ellipse at 50% 86%,#c3d2c3 0 56px,transparent 57px),#101410;position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.22)}
+.live-entry{display:grid;justify-items:center;gap:var(--s3);text-align:center}
+.live-entry-icon{width:76px;height:76px;border-radius:50%;background:#eef7ee;border:2px solid var(--green);color:var(--green);display:grid;place-items:center}
+.live-entry-icon svg{width:36px;height:36px}
+.live-entry-status{font-weight:800;color:#4c554c;font-size:15px}
+.live-entry-status.ok{color:var(--green)}
+.live-entry-status.err{color:#b3261e}
+.btn-live-open{font-size:16.5px;padding:15px 28px;width:100%;max-width:440px}
+.live-overlay{position:fixed;inset:0;z-index:96;background:var(--black);display:none;overflow-y:auto}
+.live-overlay.open{display:block}
+.live-overlay-in{min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--s4);padding:var(--s5) var(--page-x) var(--s7)}
+.live-overlay-head{width:min(400px,92vw);display:flex;align-items:center;justify-content:space-between;gap:var(--s3);color:#fff}
+.live-overlay-head b{font-family:"Archivo";font-size:20px;line-height:1.2}
+.live-close{background:transparent;border:1.5px solid rgba(255,255,255,.45);color:#fff;width:44px;height:44px;min-height:44px;border-radius:50%;font-size:15px;font-weight:800;flex:0 0 44px;display:grid;place-items:center;transition:transform .08s ease}
+.live-close:active{transform:scale(.94)}
+.live-frame{width:min(400px,92vw);aspect-ratio:3/3.9;border-radius:26px;border:3px solid var(--green);background:radial-gradient(circle at 50% 36%,#dfe8df 0 46px,#c3d2c3 47px 48px,transparent 49px),radial-gradient(ellipse at 50% 86%,#c3d2c3 0 56px,transparent 57px),#101410;position:relative;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.22)}
 .live-frame video,.live-frame canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:none}
 .live-frame.on video,.live-frame.on canvas{display:block}
 .live-frame canvas{pointer-events:none}
 .live-frame .scan{position:absolute;left:0;right:0;height:52px;top:-58px;background:linear-gradient(180deg,transparent,rgba(29,185,84,.55),transparent);display:none;z-index:4;pointer-events:none}
 .live-frame.scanning .scan{display:block;animation:scan 1.15s linear infinite}
-@keyframes scan{to{transform:translateY(430px)}}
-.live-oval{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%);width:64%;height:70%;border:2.5px dashed rgba(255,255,255,.75);border-radius:50%;z-index:3;pointer-events:none;transition:border-color .2s}
+@keyframes scan{to{transform:translateY(560px)}}
+.live-oval{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);width:64%;height:66%;border:2.5px dashed rgba(255,255,255,.75);border-radius:50%;z-index:3;pointer-events:none;transition:border-color .2s}
 .live-frame.face-ok .live-oval{border-color:var(--lime);border-style:solid}
 .live-frame.done{border-color:var(--lime)}
 .live-placeholder{position:absolute;inset:0;display:grid;place-items:center;z-index:2;color:#5c6a5c;font-weight:800;font-size:13px;letter-spacing:.12em;text-transform:uppercase;text-align:center;padding:20px}
 .live-frame.on .live-placeholder,.live-frame.done .live-placeholder{display:none}
-.live-badge{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(5,8,5,.78);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:800;letter-spacing:.05em;white-space:nowrap}
+.live-progress{position:absolute;top:0;left:0;right:0;height:6px;z-index:6;background:rgba(255,255,255,.22)}
+.live-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .3s ease}
+.live-badge{position:absolute;top:16px;left:50%;transform:translateX(-50%);z-index:5;background:rgba(5,8,5,.78);color:#fff;border:1px solid rgba(255,255,255,.35);border-radius:999px;padding:6px 13px;font-size:12px;font-weight:800;letter-spacing:.05em;white-space:nowrap}
 .live-badge.ok{border-color:var(--lime);color:var(--lime-soft)}
 .live-badge.bad{border-color:#e0655a;color:#ffb3ab}
-.live-arrow{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:5;min-width:58px;height:58px;padding:0 12px;border-radius:999px;background:var(--lime);color:#0b1405;display:none;place-items:center;font-family:"Archivo";font-weight:900;font-size:27px;box-shadow:0 6px 18px rgba(0,0,0,.35)}
-.live-frame.on .live-arrow{display:grid}
-.live-arrow.pulse{animation:arrowpulse .8s ease-in-out infinite alternate}
-@keyframes arrowpulse{from{transform:translateX(-50%) scale(1)}to{transform:translateX(-50%) scale(1.1)}}
-.live-success{position:absolute;inset:0;z-index:6;background:rgba(4,20,8,.72);display:none;place-items:center;text-align:center;color:#fff}
+.live-overlay-text{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:38px 16px 14px;background:linear-gradient(180deg,transparent,rgba(4,10,5,.9) 48%);text-align:center;pointer-events:none}
+.live-stepcount{color:var(--lime-soft);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;min-height:16px}
+.live-instruction{font-family:"Archivo";font-weight:900;font-size:clamp(21px,5.4vw,27px);color:#fff;line-height:1.15;margin-top:2px}
+.live-status{color:#d7ded7;font-weight:700;font-size:14px;line-height:1.5;min-height:21px;margin-top:4px}
+.live-status.ok{color:var(--lime-soft)}
+.live-status.err{color:#ffb3ab}
+.live-success{position:absolute;inset:0;z-index:7;background:rgba(4,20,8,.72);display:none;place-items:center;text-align:center;color:#fff}
 .live-frame.done .live-success{display:grid}
 .live-success .big{width:82px;height:82px;border-radius:50%;background:var(--green);border:3px solid var(--lime);color:#fff;font-size:40px;display:grid;place-items:center;margin:0 auto 10px;font-weight:900}
 .live-success b{font-family:"Archivo";font-size:21px;display:block}
 .live-success span{color:var(--lime-soft);font-weight:700;font-size:13.5px}
-.live-instruction{font-family:"Archivo";font-weight:900;font-size:clamp(20px,5vw,25px);text-align:center;line-height:1.15;min-height:30px}
-.live-sub{text-align:center;color:#4c554c;font-size:14px;line-height:1.55;min-height:22px;margin-top:4px}
-.live-status{text-align:center;font-weight:800;min-height:24px}
-.live-status.ok{color:var(--green)}
-.live-status.err{color:#b3261e}
-.live-steps{display:flex;flex-wrap:wrap;gap:var(--s2);justify-content:center;margin:var(--s4) 0 var(--s3)}
-.live-chip{border:1.5px solid #9aa79a;background:#fff;color:#4c554c;border-radius:999px;padding:7px 12px;font-size:12.5px;font-weight:800;display:inline-flex;gap:6px;align-items:center}
-.live-chip .n{width:18px;height:18px;border-radius:50%;background:#dde3dd;color:#4c554c;display:grid;place-items:center;font-size:11px;flex:0 0 18px}
-.live-chip.active{border-color:var(--green);color:#0b0d0b;background:#eef7ee;box-shadow:2px 2px 0 var(--green)}
-.live-chip.active .n{background:var(--green);color:#fff}
-.live-chip.done{border-color:var(--green);background:var(--green);color:#fff}
-.live-chip.done .n{background:#fff;color:var(--green)}
-.live-progress{height:9px;background:#dde3dd;border:1px solid #b9c2b9;border-radius:99px;overflow:hidden;margin-bottom:6px}
-.live-progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--green),var(--lime));transition:width .3s ease}
-.live-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
-@media(prefers-reduced-motion:reduce){.live-frame.scanning .scan{animation:none;top:40%}.live-arrow.pulse{animation:none}}
+.live-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;min-height:48px;width:min(400px,92vw)}
+.live-actions .btn{flex:1}
+@media(prefers-reduced-motion:reduce){.live-frame.scanning .scan{animation:none;top:40%}}
 
 /* fee + payout */
 .fee-card{border:2px solid var(--green);border-radius:18px;padding:var(--s6);background:#f2f9f2;text-align:center}

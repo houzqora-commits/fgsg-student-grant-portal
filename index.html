@@ -13,7 +13,7 @@
 /* Always show the newest build on reload: drop any service worker
    or Cache Storage left by an older version, clear saved UI state
    (never the demo accounts), and never restore a stale page from
-   the back/forward cache. Asset URLs below carry ?v=15 so a reload
+   the back/forward cache. Asset URLs below carry ?v=16 so a reload
    fetches fresh CSS/JS instead of a cached copy. */
 (function(){
   if('serviceWorker' in navigator){
@@ -38,7 +38,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=15">
+<link rel="stylesheet" href="assets/styles.css?v=16">
 </head>
 <body>
 
@@ -285,27 +285,11 @@
             <input type="text" id="fNin" inputmode="numeric" maxlength="13" placeholder="11 digits">
           </label>
           <div class="live-section">
-            <p class="live-heading">Liveness Check — Real Face Scan</p>
-            <div class="live-wrap">
-              <div class="live-frame" id="liveFrame">
-                <video id="liveVideo" autoplay muted playsinline></video>
-                <canvas id="liveCanvas" width="480" height="624"></canvas>
-                <div class="live-placeholder" id="livePlaceholder">Camera off</div>
-                <div class="live-oval" aria-hidden="true"></div>
-                <div class="scan"></div>
-                <div class="live-badge" id="liveBadge">Camera not started</div>
-                <div class="live-arrow" id="liveArrow" aria-hidden="true">◎</div>
-                <div class="live-success"><div><div class="big">✓</div><b>Liveness Confirmed</b><span>Real face scan passed</span></div></div>
-              </div>
-              <p class="live-instruction" id="liveInstruction">Liveness Check</p>
-              <p class="live-sub" id="liveSub"></p>
-              <div class="live-steps" id="liveSteps" aria-label="Liveness steps"></div>
-              <div class="live-progress"><i id="liveProgress"></i></div>
-              <p class="live-status" id="liveStatus">Not started</p>
-              <div class="live-actions">
-                <button type="button" class="btn btn-dark" id="liveBtn">Start Liveness Check — Open Camera</button>
-                <button type="button" class="btn btn-outline-dark" id="liveRetryBtn" style="display:none">Try Again</button>
-              </div>
+            <p class="live-heading">Face Scan</p>
+            <div class="live-entry">
+              <div class="live-entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="12" cy="10" r="3.2"/><path d="M6.6 19c.8-2.3 2.8-3.5 5.4-3.5s4.6 1.2 5.4 3.5"/></svg></div>
+              <p class="live-entry-status" id="liveEntryStatus">Not started</p>
+              <button type="button" class="btn btn-green btn-live-open" id="liveOpenBtn">Face Scan / Liveness Check</button>
             </div>
           </div>
         </div>
@@ -436,6 +420,37 @@
   </div>
 </footer>
 
+<!-- FACE SCAN — full-screen liveness popup. Step 4 shows only the
+     Face Scan / Liveness Check button; this popup is the scan.
+     Every instruction and status line is overlaid on the camera
+     view itself — nothing sits under the frame. -->
+<div class="live-overlay" id="liveOverlay">
+  <div class="live-overlay-in">
+    <div class="live-overlay-head">
+      <b>Face Scan — Liveness Check</b>
+      <button type="button" class="live-close" id="liveCloseBtn" aria-label="Close face scan">✕</button>
+    </div>
+    <div class="live-frame" id="liveFrame">
+      <video id="liveVideo" autoplay muted playsinline></video>
+      <canvas id="liveCanvas" width="480" height="624"></canvas>
+      <div class="live-placeholder" id="livePlaceholder">Camera off</div>
+      <div class="live-oval" aria-hidden="true"></div>
+      <div class="scan"></div>
+      <div class="live-progress"><i id="liveProgress"></i></div>
+      <div class="live-badge" id="liveBadge">Camera not started</div>
+      <div class="live-overlay-text">
+        <p class="live-stepcount" id="liveStepCount"></p>
+        <p class="live-instruction" id="liveInstruction">Liveness Check</p>
+        <p class="live-status" id="liveStatus">Not started</p>
+      </div>
+      <div class="live-success"><div><div class="big">✓</div><b>Liveness Confirmed</b><span>Real face scan passed</span></div></div>
+    </div>
+    <div class="live-actions">
+      <button type="button" class="btn btn-lime" id="liveRetryBtn" style="display:none">Try Again</button>
+    </div>
+  </div>
+</div>
+
 <!-- APP PICKER SHEET — one searchable picker for every dropdown -->
 <div class="sheet-overlay" id="pickerOverlay">
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
@@ -454,9 +469,9 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/auth.js?v=15"></script>
-<script src="assets/app.js?v=15"></script>
-<script src="assets/liveness.js?v=15"></script>
-<script src="assets/payment.js?v=15"></script>
+<script src="assets/auth.js?v=16"></script>
+<script src="assets/app.js?v=16"></script>
+<script src="assets/liveness.js?v=16"></script>
+<script src="assets/payment.js?v=16"></script>
 </body>
 </html>
