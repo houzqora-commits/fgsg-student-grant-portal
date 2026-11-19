@@ -307,6 +307,20 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,135,81,.35);bor
 .sheet-overlay.open{display:flex}
 .sheet{background:#fff;color:#0b0d0b;width:min(560px,100%);max-height:88vh;display:flex;flex-direction:column;border:2.5px solid var(--green);border-bottom:none;border-radius:22px 22px 0 0;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.45)}
 @media(min-width:640px){.sheet-overlay{align-items:center;padding:20px}.sheet{border-bottom:2.5px solid var(--green);border-radius:22px;box-shadow:10px 10px 0 rgba(0,135,81,.9)}}
+/* Search tapped: the sheet moves to the top of the screen so the
+   on-screen keyboard opens below it instead of covering it. Only
+   phones need this — there is no covering keyboard on desktop.
+   The list is capped above keyboard height and scrolls inside;
+   a very full list may still run under the keyboard, which is
+   fine — the search box and the top options always stay visible. */
+@media(max-width:639px){
+  .sheet-overlay.kb-open{align-items:flex-start;padding:10px 10px 0}
+  .sheet-overlay.kb-open .sheet{border:2.5px solid var(--green);border-radius:20px;max-height:62dvh;box-shadow:0 18px 44px rgba(0,0,0,.45)}
+}
+@media(min-width:640px){
+  .sheet-overlay.kb-open{align-items:flex-start;padding-top:24px}
+  .sheet-overlay.kb-open .sheet{max-height:calc(100dvh - 48px)}
+}
 .sheet-head{background:#0b0f0b;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
 .sheet-head b{font-family:"Archivo";font-size:19px;line-height:1.2;display:block}
 .sheet-head span{color:var(--lime-soft);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
@@ -314,7 +328,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,135,81,.35);bor
 .sheet-close:active{transform:scale(.94)}
 .sheet-search{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1.5px solid #e3e8e3}
 .sheet-search svg{width:20px;height:20px;flex:0 0 20px;color:var(--green)}
-.sheet-search input{flex:1;margin:0;border:1.5px solid #9aa79a;border-radius:12px;padding:12px 14px;font:inherit;font-size:15.5px;min-height:48px;background:#fff;color:#0b0d0b;min-width:0}
+.sheet-search input{flex:1;margin:0;border:1.5px solid #9aa79a;border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;min-height:48px;background:#fff;color:#0b0d0b;min-width:0}
 .sheet-search input:focus{outline:3px solid rgba(0,135,81,.35);border-color:var(--green)}
 .sheet-list{overflow-y:auto;padding:8px;-webkit-overflow-scrolling:touch}
 .sheet-opt{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);width:100%;text-align:left;background:#fff;border:1.5px solid transparent;border-radius:12px;padding:13px 14px;font:inherit;font-size:15px;font-weight:600;line-height:1.4;min-height:52px;color:#0b0d0b;transition:transform .08s ease}

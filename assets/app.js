@@ -117,13 +117,47 @@ function openPicker(key){
   var def=PICKER_DEFS[key];
   document.getElementById('pickerTitle').textContent=def.title;
   var s=document.getElementById('pickerSearch'); s.value=''; s.placeholder=def.search;
+  /* Do NOT focus the search box here: tapping a dropdown must not
+     open the keyboard. The keyboard opens only when the user taps
+     the search box itself (its native focus behaviour). The sheet
+     also starts in its normal bottom position, keyboard-free. */
+  if(document.activeElement===s){ try{s.blur();}catch(e){} }
+  var ov=document.getElementById('pickerOverlay');
+  ov.classList.remove('kb-open');
   renderPickerList();
-  document.getElementById('pickerOverlay').classList.add('open');
-  setTimeout(function(){ try{s.focus();}catch(e){} },80);
+  ov.classList.add('open');
+  var list=document.getElementById('pickerList'); if(list) list.scrollTop=0;
 }
 function closePicker(){
-  document.getElementById('pickerOverlay').classList.remove('open');
+  var ov=document.getElementById('pickerOverlay');
+  ov.classList.remove('open'); ov.classList.remove('kb-open');
+  var s=document.getElementById('pickerSearch');
+  if(s && document.activeElement===s){ try{s.blur();}catch(e){} }
   pickerKey=null;
+}
+/* When the search box itself is tapped, it gains focus and the
+   keyboard opens — only then does the sheet move to the top of
+   the screen (kb-open), so the keyboard sits below it instead of
+   covering it. On blur the sheet stays put briefly so a tap on an
+   option underneath is not lost to a layout jump; closePicker
+   clears the class when the sheet closes. */
+var pickerSearchEl=document.getElementById('pickerSearch');
+if(pickerSearchEl){
+  pickerSearchEl.addEventListener('focus',function(){
+    document.getElementById('pickerOverlay').classList.add('kb-open');
+  });
+  pickerSearchEl.addEventListener('blur',function(){
+    /* Delay the move back down: a tap on an option blurs the search
+       box first, and dropping the sheet instantly would shift the
+       option out from under the tap. 220ms lets that tap land (it
+       closes the sheet anyway); if the picker is still open after
+       it, the keyboard was dismissed, so settle back down. */
+    setTimeout(function(){
+      if(document.activeElement!==pickerSearchEl){
+        document.getElementById('pickerOverlay').classList.remove('kb-open');
+      }
+    },220);
+  });
 }
 document.querySelectorAll('[data-picker]').forEach(function(btn){
   btn.addEventListener('click',function(){ openPicker(btn.dataset.picker); });
