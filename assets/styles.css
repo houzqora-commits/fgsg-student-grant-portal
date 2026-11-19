@@ -66,8 +66,9 @@ header.site{position:sticky;top:0;z-index:55;background:rgba(7,8,7,.94);backdrop
 .hero-cta{display:flex;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s6);justify-content:center}
 .hero-card{background:#fff;color:#0a0a0a;border-radius:16px;padding:12px;border:2.5px solid var(--green);box-shadow:6px 6px 0 rgba(0,135,81,.9);width:100%;max-width:320px}
 .hero-card img{border-radius:14px;width:100%;height:auto}
-.hero-card figcaption{display:flex;justify-content:space-between;gap:var(--s3);padding:var(--s3) 4px 2px;font-weight:700;font-size:13.5px}
+.hero-card figcaption{display:flex;justify-content:space-between;gap:var(--s3);padding:var(--s3) 4px 2px;font-weight:700;font-size:13.5px;align-items:baseline}
 .hero-card figcaption span{color:var(--green);font-weight:800}
+.hero-card figcaption .est{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:600;font-size:15px;letter-spacing:.02em;transform:skewX(-6deg);display:inline-block;color:#0a5c36}
 
 /* stats */
 .stats{border-bottom:1px solid var(--line);background:var(--ink)}

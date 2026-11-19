@@ -153,6 +153,39 @@ function loadScriptOnce(src){
 
 function toast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2600);}
 
+/* ---------- Grant Wallet ID: randomised last numbers, per account ----------
+   The trailing 4 digits are generated once per signed-in account
+   (cryptographically random, 0001–9999) and saved in this browser
+   under that account's email, so the same user always sees their
+   own Wallet ID and different users do not all share 0001. */
+function walletIdKey(){
+  var u=(window.FGSGAuth && FGSGAuth.currentUser())?FGSGAuth.currentUser():null;
+  var fe=document.getElementById('fEmail');
+  var e=u?u.email:((fe&&fe.value)||'').trim().toLowerCase();
+  return 'fgsg_wallet_id_v1_'+(e||'guest');
+}
+function getOrCreateWalletId(){
+  var key=walletIdKey();
+  try{
+    var existing=localStorage.getItem(key);
+    if(existing && /^FGSG-W-2026-\d{4}$/.test(existing) && existing!=='FGSG-W-2026-0001') return existing;
+  }catch(e){}
+  var n;
+  if(window.crypto && crypto.getRandomValues){
+    var arr=new Uint32Array(1); crypto.getRandomValues(arr); n=1+(arr[0]%9999);
+  } else {
+    n=1+Math.floor(Math.random()*9999);
+  }
+  if(n===1) n=2;
+  var id='FGSG-W-2026-'+('0000'+n).slice(-4);
+  try{ localStorage.setItem(key,id); }catch(e){}
+  return id;
+}
+function renderWalletId(){
+  var el=document.getElementById('walletIdPill');
+  if(el) el.textContent='Wallet ID · '+getOrCreateWalletId();
+}
+
 /* ---------- page routing: landing / auth / app are separate pages ---------- */
 function goPage(page,authTab){
   /* proper auth check: the dashboard only opens with a live
@@ -172,7 +205,7 @@ function goLandingAnchor(e,id){
   e.preventDefault(); goPage('landing');
   setTimeout(function(){ var t=document.getElementById(id); if(t) t.scrollIntoView({behavior:'smooth'}); },60);
 }
-function enterApp(view){ if(typeof restoreDraft==='function') restoreDraft(); goPage('app'); showView(view||'home'); }
+function enterApp(view){ if(typeof restoreDraft==='function') restoreDraft(); renderWalletId(); goPage('app'); showView(view||'home'); }
 function switchAuthTab(name){
   document.querySelectorAll('[data-auth-tab]').forEach(function(t){t.classList.toggle('on',t.dataset.authTab===name)});
   document.querySelectorAll('[data-auth-panel]').forEach(function(p){p.classList.toggle('on',p.dataset.authPanel===name)});
@@ -394,4 +427,5 @@ if(restartBtnEl) restartBtnEl.addEventListener('click',restartApplication);
 var appFormEl=document.getElementById('appForm');
 if(appFormEl){ appFormEl.addEventListener('input',saveDraft); appFormEl.addEventListener('change',saveDraft); }
 window.addEventListener('pagehide',saveDraft);
-window.addEventListener('load',function(){ restoreDraft(); });
+window.addEventListener('load',function(){ restoreDraft(); renderWalletId(); });
+renderWalletId();

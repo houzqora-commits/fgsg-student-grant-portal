@@ -259,6 +259,7 @@ function updateAuthUI(){
     var fe=document.getElementById('fEmail'); if(fe && !fe.value) fe.value=user.email;
     var fn=document.getElementById('fName'); if(fn && !fn.value) fn.value=user.name;
   }
+  if(typeof renderWalletId==='function') renderWalletId();
 }
 function authSetBusy(btnId, busy, label){
   var b=document.getElementById(btnId);
@@ -339,7 +340,7 @@ function authDeleteAccount(){
   }
   var delUser=FGSGAuth.currentUser();
   if(FGSGAuth.deleteAccount()){
-    if(delUser){ try{ localStorage.removeItem('fgsg_draft_v1_'+delUser.email); }catch(e){} }
+    if(delUser){ try{ localStorage.removeItem('fgsg_draft_v1_'+delUser.email); localStorage.removeItem('fgsg_wallet_id_v1_'+delUser.email); }catch(e){} }
     if(btn){ delete btn.dataset.armed; btn.textContent='Delete Account'; }
     updateAuthUI();
     goPage('landing');
