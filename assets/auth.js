@@ -230,10 +230,9 @@ function updateAuthUI(){
       var since='';
       try{ since=new Date(user.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }catch(e){}
       box.innerHTML='<b>'+escapeHtml(user.name)+'</b><br>'+escapeHtml(user.email)+
-        (since?'<br><span>Account saved in this browser since '+escapeHtml(since)+'</span>':'')+
-        '<br><span>Password stored as a secure hash — never in plain text.</span>';
+        (since?'<br><span>'+escapeHtml(since)+'</span>':'');
     } else {
-      box.innerHTML='No account is signed in on this device.';
+      box.innerHTML='Not signed in.';
     }
   }
   if(user){
@@ -277,7 +276,7 @@ function authSignup(){
     document.getElementById('fPass').value=p;
     updateAuthUI();
     enterApp('application');
-    toast('Account created and saved in this browser');
+    toast('Account created');
   }).catch(function(err){
     authSetBusy('signupBtn', false);
     setAuthMsg('signupMsg', err.message);
@@ -308,7 +307,7 @@ function authLogout(){
   var fp=document.getElementById('fPass'); if(fp) fp.value='';
   updateAuthUI();
   goPage('landing');
-  toast('Logged out on this device');
+  toast('Logged out');
 }
 function authDeleteAccount(){
   var btn=document.getElementById('deleteAcctBtn');
@@ -322,7 +321,7 @@ function authDeleteAccount(){
     if(btn){ delete btn.dataset.armed; btn.textContent='Delete Account'; }
     updateAuthUI();
     goPage('landing');
-    toast('Account deleted from this browser');
+    toast('Account deleted');
   }
 }
 window.addEventListener('load', function(){ updateAuthUI(); });

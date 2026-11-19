@@ -7,12 +7,12 @@
 
 /* ---------- liveness: real on-device face scan (MediaPipe Face Mesh) ---------- */
 var LIVE_STEPS=[
-  {id:'center', chip:'Centre', arrow:'◎', title:'Look straight at the camera', sub:'Centre your face inside the oval and hold still'},
-  {id:'left', chip:'Turn left', arrow:'←', title:'Turn your face LEFT', sub:'Slowly turn your head towards the arrow — your left'},
-  {id:'right', chip:'Turn right', arrow:'→', title:'Turn your face RIGHT', sub:'Slowly turn your head the other way — your right'},
-  {id:'up', chip:'Tilt up', arrow:'↑', title:'Tilt your face UP', sub:'Lift your chin and look slightly up'},
-  {id:'down', chip:'Tilt down', arrow:'↓', title:'Tilt your face DOWN', sub:'Drop your chin and look slightly down'},
-  {id:'blink', chip:'Blink', arrow:'◉', title:'Now blink', sub:'Close both eyes fully, then open them again'}
+  {id:'center', chip:'Centre', arrow:'◎', title:'Look straight at the camera', sub:''},
+  {id:'left', chip:'Turn left', arrow:'←', title:'Turn your face LEFT', sub:''},
+  {id:'right', chip:'Turn right', arrow:'→', title:'Turn your face RIGHT', sub:''},
+  {id:'up', chip:'Tilt up', arrow:'↑', title:'Tilt your face UP', sub:''},
+  {id:'down', chip:'Tilt down', arrow:'↓', title:'Tilt your face DOWN', sub:''},
+  {id:'blink', chip:'Blink', arrow:'◉', title:'Now blink', sub:''}
 ];
 var liveIdx=0, liveRunning=false, liveStream=null, liveMesh=null, liveRAF=0, liveSending=false;
 var liveHold=0, liveBase=null, liveBlinkPhase=0, liveFaceSeen=false, liveNoFaceFrames=0;
@@ -54,7 +54,7 @@ function liveFail(msg){
   liveEls.liveStatus.className='live-status err';
   liveEls.liveStatus.textContent=msg;
   liveEls.liveInstruction.textContent='Liveness check could not run';
-  liveEls.liveSub.textContent='Check that camera permission is allowed for this site, then tap Try Again.';
+  liveEls.liveSub.textContent='';
   liveSetBadge('Camera blocked','bad');
   liveEls.liveBtn.style.display='none';
   liveEls.liveRetryBtn.style.display='inline-flex';
@@ -67,8 +67,8 @@ function liveReset(){
   var ctx=liveEls.liveCanvas.getContext('2d'); ctx.clearRect(0,0,liveEls.liveCanvas.width,liveEls.liveCanvas.height);
   liveEls.liveStatus.className='live-status';
   liveEls.liveStatus.textContent='Not started';
-  liveEls.liveInstruction.textContent='Tap Start to open your camera';
-  liveEls.liveSub.textContent='Use a bright place, remove dark glasses, and hold the phone at eye level.';
+  liveEls.liveInstruction.textContent='Liveness Check';
+  liveEls.liveSub.textContent='';
   liveEls.liveArrow.textContent='◎'; liveEls.liveArrow.classList.remove('pulse');
   liveSetBadge('Camera not started','');
   liveEls.liveBtn.style.display='inline-flex';
@@ -83,9 +83,9 @@ function liveSucceed(){
   liveEls.liveFrame.classList.remove('on');
   liveEls.liveFrame.classList.add('done','face-ok');
   liveEls.liveStatus.className='live-status ok';
-  liveEls.liveStatus.textContent='✓ Liveness confirmed — real face scan passed. You can continue.';
+  liveEls.liveStatus.textContent='✓ Liveness confirmed';
   liveEls.liveInstruction.textContent='Liveness check passed ✓';
-  liveEls.liveSub.textContent='Centre ✓ · Left ✓ · Right ✓ · Up ✓ · Down ✓ · Blink ✓';
+  liveEls.liveSub.textContent='';
   liveEls.liveBtn.style.display='none';
   liveEls.liveRetryBtn.style.display='inline-flex';
   liveEls.liveRetryBtn.textContent='Scan Again';

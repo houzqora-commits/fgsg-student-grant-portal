@@ -26,10 +26,10 @@ function completePaystackPayment(ref){
   feeDone=true;
   var st=document.getElementById('feeStatus');
   st.className='live-status ok';
-  st.textContent='✓ Paid via Paystack (test mode) — ₦3,000 test payment recorded, no real money moved · Ref: '+ref;
+  st.textContent='✓ Paid via Paystack · Ref: '+ref;
   document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000';
-  document.getElementById('walletStatus').textContent='Verification fee paid via Paystack in test mode. Your chosen payout method will be confirmed on submission.';
-  toast('Paystack test payment complete — no real charge');
+  document.getElementById('walletStatus').textContent='Verification fee paid';
+  toast('Payment complete');
 }
 function openTestCheckout(){
   makePaystackRef();
@@ -61,7 +61,7 @@ document.getElementById('psCloseBtn').addEventListener('click',function(){ close
 document.getElementById('psPayBtn').addEventListener('click',function(){
   var btn=this, ms=document.getElementById('psModalStatus');
   btn.disabled=true; btn.textContent='Processing…';
-  ms.className='live-status'; ms.textContent='Contacting Paystack (test mode)…';
+  ms.className='live-status'; ms.textContent='Contacting Paystack…';
   setTimeout(function(){
     var ref=paystackRef||makePaystackRef();
     document.getElementById('psOverlay').classList.remove('open');
@@ -69,7 +69,7 @@ document.getElementById('psPayBtn').addEventListener('click',function(){
   },1400);
 });
 document.getElementById('feeBtn').addEventListener('click',async function(){
-  if(feeDone){ toast('Verification fee already paid via Paystack (test mode)'); return; }
+  if(feeDone){ toast('Verification fee already paid'); return; }
   var keyIsPlaceholder = !PAYSTACK_PUBLIC_KEY || PAYSTACK_PUBLIC_KEY.indexOf('xxxx')>=0;
   if(!keyIsPlaceholder && typeof PaystackPop==='undefined'){
     var st0=document.getElementById('feeStatus');
@@ -114,10 +114,10 @@ function submitDemo(){
   document.getElementById('refCode').textContent=ref;
   var pay=document.querySelector('input[name="pay"]:checked').value;
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';
-  document.getElementById('successSummary').textContent='Well done, '+name.split(' ')[0]+'. This demo application for '+school+' was filed with payout via '+pay+'. Reference: '+ref+'. Nothing was sent or charged.';
+  document.getElementById('successSummary').textContent=name.split(' ')[0]+' · '+school+' · '+pay+' · '+ref;
   var esc2=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
-  document.getElementById('bankSummary').innerHTML='Payout method confirmed in demo: <b>'+esc2(pay)+'</b>.'+(pay==='Bank Account'&&val('fBank')?' Bank: <b>'+esc2(val('fBank'))+'</b>, account ending •••'+esc2(val('fAcct').slice(-3)||'000')+'.':' Your grant would land in your FGSG Site Wallet on activation.');
-  document.getElementById('walletStatus').textContent = pay==='Site Wallet' ? 'Verified in demo — grant would land in this wallet on payout day.' : 'Verified in demo — grant would be paid directly to your bank account.';
+  document.getElementById('bankSummary').innerHTML='<b>'+esc2(pay)+'</b>'+(pay==='Bank Account'&&val('fBank')?' · <b>'+esc2(val('fBank'))+'</b> •••'+esc2(val('fAcct').slice(-3)||'000'):'');
+  document.getElementById('walletStatus').textContent='Verified';
   renderProfile();
   toast('Demo application filed — '+ref);
 }

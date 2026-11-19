@@ -12,7 +12,7 @@
 </head>
 <body>
 
-<div class="demo-banner">Official Site for FGSG.</span></div>
+<div class="demo-banner">🏁 Competition Demo — Presentation Prototype Only</div>
 
 <header class="site">
   <div class="header-in">
@@ -24,8 +24,8 @@
       <a href="#guidelines" onclick="goLandingAnchor(event,'guidelines')">Guidelines</a>
       <a href="#faqs" onclick="goLandingAnchor(event,'faqs')">FAQs</a>
       <a href="#help" onclick="goLandingAnchor(event,'help')">Help Desk</a>
-      <a href="#auth" onclick="goPage('auth','login');return false;">Log in</a>
-      <a class="btn btn-lime" href="#auth" onclick="goPage('auth','signup');return false;">Apply</a>
+      <a href="#auth" id="navLoginLink" onclick="goPage('auth','login');return false;">Log in</a>
+      <a class="btn btn-lime" id="navApplyLink" href="#auth" onclick="goPage('auth','signup');return false;">Apply — Demo</a>
     </nav>
   </div>
 </header>
@@ -38,7 +38,7 @@
       <span class="kicker">Federal Government Student Grant · Concept</span>
       <h1>Student<br><span class="outline">Grant</span> <span class="lime">Nigeria</span></h1>
       <p class="tagline">…Empowering Nigerian Students for a Brighter Future</p>
-      <p class="sub">A single portal concept for students in universities and polytechnics across Nigeria — apply once, verify your identity, and receive your grant to your site wallet or bank account. This page is a design-competition presentation build: every screen works, nothing is live.</p>
+      <p class="sub">A single portal for students in universities and polytechnics across Nigeria — apply once, verify your identity, and receive your grant to your Grant Wallet or bank account.</p>
       <div class="hero-cta">
         <a class="btn btn-lime" href="#auth" onclick="goPage('auth','signup');return false;">Start Application →</a>
         <a class="btn btn-ghost" href="#how">See How It Works</a>
@@ -62,10 +62,10 @@
 
 <div class="quickfire" aria-label="FGSG at a glance">
   <div class="quickfire-in">
-    <div><b>₦3,000 Verification</b><span>Paid with bank transfer first, plus card, USSD and bank account.</span></div>
-    <div><b>Liveness Scan</b><span>Real on-device face check: centre, turn, tilt, blink.</span></div>
-    <div><b>2 Payout Options</b><span>Grant lands in your Grant Wallet or straight to your bank account.</span></div>
-    <div><b>JAMB Letter + NIN</b><span>The two required documents. School fees receipt is Mandatory.</span></div>
+    <div><b>₦3,000 Verification</b></div>
+    <div><b>Liveness Scan</b></div>
+    <div><b>2 Payout Options</b></div>
+    <div><b>JAMB Letter + NIN + Last Receipt</b></div>
   </div>
 </div>
 
@@ -73,42 +73,41 @@
 <section class="block" id="how">
   <div class="sec-head">
     <h2>How It <span>Works</span></h2>
-    <p>Four stages, six steps in the portal — from sign-up to payout. The full flow is live inside the demo portal below — judges can click through it end to end.</p>
   </div>
   <div class="steps">
-    <div class="step-card"><div class="num">1</div><h3>Create Account</h3><p>Register with an email and password, then fill in your personal and school details.</p></div>
-    <div class="step-card"><div class="num">2</div><h3>Upload Documents</h3><p>JAMB admission letter, your NIN for identity matching, and a school fees receipt if you have one.</p></div>
-    <div class="step-card"><div class="num">3</div><h3>Liveness &amp; Verification</h3><p>A real camera face scan — centre, turn left and right, tilt up and down, then blink — confirms it is really you, then the ₦3,000 verification fee is paid with Paystack.</p></div>
-    <div class="step-card"><div class="num">4</div><h3>Get Paid</h3><p>Choose how the grant lands: straight into your FGSG Site Wallet, or to your bank account.</p></div>
+    <div class="step-card"><div class="num">1</div><h3>Create Account</h3></div>
+    <div class="step-card"><div class="num">2</div><h3>Upload Documents</h3></div>
+    <div class="step-card"><div class="num">3</div><h3>Liveness &amp; Verification</h3></div>
+    <div class="step-card"><div class="num">4</div><h3>Get Paid</h3></div>
   </div>
 </section>
 
 <!-- GUIDELINES -->
 <section class="block" id="guidelines">
-  <div class="sec-head"><h2>Guide<span>lines</span></h2><p>Who can apply, what to prepare, and how payout works in the concept.</p></div>
+  <div class="sec-head"><h2>Guide<span>lines</span></h2></div>
   <div class="guide-grid">
     <div class="guide-card"><h3>Who Can Apply</h3><ul><li>Students enrolled in a Nigerian university, polytechnic or college of education</li><li>All levels — ND, HND and 100 to 600 level</li><li>Applicants from all 36 states and the FCT</li></ul></div>
-    <div class="guide-card"><h3>What You Need</h3><ul><li>Email address and password for your account</li><li>JAMB admission letter</li><li>NIN, date of birth, state of origin and LGA</li><li>School fees receipt — optional</li></ul></div>
-    <div class="guide-card"><h3>Verification &amp; Payout</h3><ul><li>Face liveness check confirms your identity</li><li>₦3,000 verification fee paid with Paystack — card, bank transfer, USSD or bank account (test mode in this demo, nothing is charged)</li><li>Payout to Site Wallet or bank account after verification</li></ul></div>
+    <div class="guide-card"><h3>What You Need</h3><ul><li>Email address and password for your account</li><li>JAMB admission letter</li><li>Last school fees receipt</li><li>NIN, date of birth, state of origin and LGA</li></ul></div>
+    <div class="guide-card"><h3>Verification &amp; Payout</h3><ul><li>Face liveness check</li><li>₦3,000 verification fee — Paystack</li><li>Payout to Grant Wallet or bank account</li></ul></div>
   </div>
 </section>
 
 <!-- FAQS -->
-<section class="block" id="faqs" style="padding-top:0">
+<section class="block" id="faqs">
   <div class="sec-head"><h2>FA<span>Qs</span></h2></div>
-  <details><summary>Is the school fees receipt compulsory?</summary><div class="a">No. It is optional in the application. The JAMB admission letter and NIN are the required documents; a receipt simply supports your school fees record if you have one.</div></details>
-  <details><summary>Which institutions are covered?</summary><div class="a">The concept covers universities, polytechnics and colleges of education across Nigeria, for students from ND level through 600 level.</div></details>
-  <details><summary>What is the liveness check?</summary><div class="a">A real face scan that confirms a live, present person is completing the application. Your camera opens and guides you to centre your face, turn left, turn right, tilt up, tilt down, then blink — each move is detected live before the check passes. It protects grants from being claimed with someone else's documents or a photo. The scan runs entirely on your device: no video is recorded, uploaded or saved.</div></details>
-  <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">On Step 5, tap “Pay ₦3,000 with Paystack” and pay by card, bank transfer, USSD or bank account. Paystack confirms the payment and gives you a reference before you move to payout. In this competition demo Paystack runs in test mode, so no real charge is made and no real payment details are taken.</div></details>
-  <details><summary>How do I receive the grant after verification?</summary><div class="a">You choose at the final step: the grant can land in your FGSG Site Wallet, or be paid directly into your bank account.</div></details>
-  <details><summary>Where is my account saved?</summary><div class="a">Only in your own browser, on this device. Signing up saves your name, email and a securely hashed password (PBKDF2 — the real password is never stored), and logging in checks your password against that hash. There is no server account and no email confirmation; clearing your browser data deletes the account, and it will not appear on another phone or computer. Repeated wrong passwords pause logins briefly, and your NIN and bank details are never saved with the account.</div></details>
-  <details><summary>Is this the live application portal?</summary><div class="a">No — this is a design-competition presentation prototype. It demonstrates the complete look and flow, but it does not accept real applications, payments, NINs or bank details.</div></details>
+  <details><summary>Is the last school fees receipt compulsory?</summary><div class="a">Yes. Required.</div></details>
+  <details><summary>Which institutions are covered?</summary><div class="a">Universities, polytechnics and colleges of education — ND to 600 level.</div></details>
+  <details><summary>What is the liveness check?</summary><div class="a">On-device face scan: centre, turn, tilt, blink.</div></details>
+  <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">Paystack — card, bank transfer, USSD or bank account.</div></details>
+  <details><summary>How do I receive the grant after verification?</summary><div class="a">Grant Wallet or bank account.</div></details>
+  <details><summary>Where is my account saved?</summary><div class="a">In this browser only.</div></details>
+  <details><summary>Is this the live application portal?</summary><div class="a">No. Competition prototype.</div></details>
 </section>
 
 <!-- HELP -->
-<section class="block" style="padding-top:0" id="help">
+<section class="block" id="help">
   <div class="help-band">
-    <div><h3>Help Desk</h3><p>Stuck on a step? In the live concept, the help desk handles application, document and payout questions. For this presentation, use the demo flow above — every step is clickable.</p></div>
+    <div><h3>Help Desk</h3></div>
     <button class="btn btn-lime" onclick="goPage('auth','signup')">Create an Account →</button>
   </div>
 </section>
@@ -119,7 +118,6 @@
 <div class="page" id="page-auth">
   <div class="auth-wrap">
     <h2>Your <span>Account</span></h2>
-    <p class="auth-sub">Log in, create an account, or reset a forgotten password. Accounts are saved only in this browser — no email is sent.</p>
     <div class="auth-card">
       <div class="auth-tabs" role="tablist" aria-label="Account">
         <button type="button" class="auth-tab on" data-auth-tab="login" onclick="switchAuthTab('login')">Log in</button>
@@ -133,29 +131,26 @@
         <label class="f">Password <span class="req">*</span><input type="password" id="authLoginPass" placeholder="Your password" autocomplete="current-password"></label>
         <button type="button" class="btn btn-green" id="loginBtn" onclick="authLogin()">Log in →</button>
         <div class="auth-msg" id="loginMsg" role="alert"></div>
-        <div class="demo-note"><b>Browser account:</b> your account is stored only in this browser and your password is checked against its saved hash — it is never stored in plain text. Use a demo password, never a real one. No account on this device yet? Use the Sign up tab first.</div>
       </div>
 
       <div class="auth-panel" data-auth-panel="signup">
         <h3>Create your account</h3>
         <label class="f">Full name <span class="req">*</span><input type="text" id="authSuName" placeholder="e.g. Adaeze Chiamaka Okafor" autocomplete="name"></label>
         <label class="f">Email address <span class="req">*</span><input type="email" id="authSuEmail" placeholder="you@example.com" autocomplete="email"></label>
-        <label class="f">Password <span class="req">*</span><input type="password" id="authSuPass" placeholder="Create a password" autocomplete="new-password"><small>At least 8 characters, with a letter and a number.</small></label>
+        <label class="f">Password <span class="req">*</span><input type="password" id="authSuPass" placeholder="Create a password" autocomplete="new-password"></label>
         <label class="f">Confirm password <span class="req">*</span><input type="password" id="authSuPass2" placeholder="Repeat the password" autocomplete="new-password"></label>
         <button type="button" class="btn btn-green" id="signupBtn" onclick="authSignup()">Create Account →</button>
         <div class="auth-msg" id="signupMsg" role="alert"></div>
-        <div class="demo-note"><b>Saved in this browser:</b> signing up saves your name, email and a securely hashed password on this device only — no server, no email confirmation. One account per email on this device. Your NIN and bank details are never saved with your account.</div>
       </div>
 
       <div class="auth-panel" data-auth-panel="forgot">
         <h3>Forgot password</h3>
-        <p class="hint" style="color:#4c554c;font-size:14.5px;line-height:1.6;margin-bottom:16px">No email is sent. Your account lives only in this browser, so the reset happens here, on this device.</p>
         <label class="f">Email address <span class="req">*</span><input type="email" id="authForgotEmail" placeholder="you@example.com" autocomplete="email"></label>
-        <label class="f">New password <span class="req">*</span><input type="password" id="authForgotPass" placeholder="Create a new password" autocomplete="new-password"><small>At least 8 characters, with a letter and a number.</small></label>
+        <label class="f">New password <span class="req">*</span><input type="password" id="authForgotPass" placeholder="Create a new password" autocomplete="new-password"></label>
         <label class="f">Confirm new password <span class="req">*</span><input type="password" id="authForgotPass2" placeholder="Repeat the new password" autocomplete="new-password"></label>
         <button type="button" class="btn btn-green" id="forgotBtn" onclick="authForgot()">Reset Password</button>
         <div class="auth-msg" id="forgotMsg" role="alert"></div>
-        <div class="auth-ok" id="forgotOk"><b>Password reset on this device.</b> Go to <b>Log in</b> and sign in with your new password.</div>
+        <div class="auth-ok" id="forgotOk"><b>Password reset.</b></div>
       </div>
     </div>
     <a class="auth-back" href="#top" onclick="goPage('landing');return false;">← Back to home</a>
@@ -168,16 +163,14 @@
   <div class="shell">
     <div class="sec-head">
       <h2>Dash<span>board</span></h2>
-      <p>Wallet balance, application progress, payout and notices.</p>
     </div>
 
     <!-- HOME VIEW -->
     <div class="view active" id="view-home">
       <div class="grid-2">
         <div class="wallet">
-          <small>FGSG Site Wallet</small>
+          <small>FGSG Grant Wallet</small>
           <div class="bal">₦0.00</div>
-          <p>Your grant lands here first when you pick Site Wallet at payout. From the wallet you can hold it, or move it to your bank.</p>
           <div class="pillrow"><span class="pill">Wallet ID · FGSG-W-2026-0001</span><span class="pill">Status · Awaiting verification</span></div>
         </div>
         <div class="card-w">
@@ -187,7 +180,7 @@
             <li>National Identification Number (NIN)</li>
             <li>Institution name, department &amp; level</li>
             <li>State of origin, LGA &amp; date of birth</li>
-            <li class="opt">School fees receipt — optional, if you have it</li>
+            <li>Last School Fees Receipt</li>
           </ul>
           <div style="margin-top:20px"><button class="btn btn-green" onclick="showView('application')">Continue to Application →</button></div>
         </div>
@@ -203,18 +196,15 @@
         <!-- STEP 1 -->
         <div class="fstep active" data-step="1">
           <h3>Login details</h3>
-          <p class="hint">Your account is how you return to check your application, wallet and notices.</p>
           <div class="fgrid">
             <label class="f">Email address <span class="req">*</span><input type="email" id="fEmail" placeholder="you@example.com" autocomplete="email"></label>
             <label class="f">Password <span class="req">*</span><input type="password" id="fPass" placeholder="Your account password" autocomplete="current-password"></label>
           </div>
-          <div class="demo-note"><b>Account check:</b> this step is checked against the account saved in this browser — the password must match its saved hash. Nothing is sent to a server. Never use a real password for the presentation.</div>
         </div>
 
         <!-- STEP 2 -->
         <div class="fstep" data-step="2">
           <h3>Personal details</h3>
-          <p class="hint">As they appear on your admission documents.</p>
           <div class="fgrid">
             <label class="f">Full name <span class="req">*</span><input type="text" id="fName" placeholder="e.g. Adaeze Chiamaka Okafor"></label>
             <label class="f">Date of birth <span class="req">*</span><input type="date" id="fDob"></label>
@@ -228,7 +218,6 @@
         <!-- STEP 3 -->
         <div class="fstep" data-step="3">
           <h3>Institution &amp; course</h3>
-          <p class="hint">Universities and polytechnics across Nigeria.</p>
           <div class="fgrid">
             <label class="f">Institution type <span class="req">*</span>
               <select id="fType"><option value="">Select…</option><option>University</option><option>Polytechnic</option><option>College of Education</option></select>
@@ -238,7 +227,6 @@
             </label>
             <label class="f" style="grid-column:1/-1">Institution name <span class="req">*</span>
               <select id="fSchool"><option value="">Select institution…</option></select>
-              <small>Showing well-known institutions for the demo — the full build lists every accredited school.</small>
             </label>
             <label class="f" style="grid-column:1/-1">Department <span class="req">*</span><input type="text" id="fDept" placeholder="e.g. Computer Science, Mass Communication, Accountancy"></label>
           </div>
@@ -247,18 +235,15 @@
         <!-- STEP 4 -->
         <div class="fstep" data-step="4">
           <h3>Documents &amp; identity</h3>
-          <p class="hint">Uploads stay on this device in the demo — files are checked by name only and never sent anywhere.</p>
           <div class="fgrid">
-            <div class="upload"><b>JAMB Admission Letter *</b><p>PDF or clear photo of your admission letter</p><input type="file" id="upJamb" accept=".pdf,image/*"><div class="file-ok" id="okJamb">✓ Document attached</div></div>
-            <div class="upload"><b>School Fees Receipt <span style="color:var(--green)">(Optional)</span></b><p>Most recent session, if you have it</p><input type="file" id="upFees" accept=".pdf,image/*"><div class="file-ok" id="okFees">✓ Document attached</div></div>
+            <div class="upload"><b>JAMB Admission Letter *</b><input type="file" id="upJamb" accept=".pdf,image/*"><div class="file-ok" id="okJamb">✓ Document attached</div></div>
+            <div class="upload"><b>Last School Fees Receipt *</b><input type="file" id="upFees" accept=".pdf,image/*"><div class="file-ok" id="okFees">✓ Document attached</div></div>
           </div>
-          <label class="f" style="margin-top:16px">National Identification Number (NIN) <span class="req">*</span>
-            <input type="text" id="fNin" inputmode="numeric" maxlength="13" placeholder="Demo only — type 11 dummy digits">
-            <small>11 digits. In this prototype the field is masked on submit and nothing is stored or transmitted.</small>
+          <label class="f" style="margin-top:20px">National Identification Number (NIN) <span class="req">*</span>
+            <input type="text" id="fNin" inputmode="numeric" maxlength="13" placeholder="11 digits">
           </label>
-          <div style="margin-top:22px">
-            <p style="font-weight:800;font-family:Archivo;font-size:19px;margin-bottom:6px;text-align:center">Liveness Check — Real Face Scan</p>
-            <p class="hint" style="margin-bottom:12px;text-align:center">Your camera opens and scans your face on this device. Follow each move: centre, turn left, turn right, tilt up, tilt down, then blink. Video is processed live on your phone or computer only — nothing is recorded, uploaded or saved.</p>
+          <div class="live-section">
+            <p class="live-heading">Liveness Check — Real Face Scan</p>
             <div class="live-wrap">
               <div class="live-frame" id="liveFrame">
                 <video id="liveVideo" autoplay muted playsinline></video>
@@ -270,8 +255,8 @@
                 <div class="live-arrow" id="liveArrow" aria-hidden="true">◎</div>
                 <div class="live-success"><div><div class="big">✓</div><b>Liveness Confirmed</b><span>Real face scan passed</span></div></div>
               </div>
-              <p class="live-instruction" id="liveInstruction">Tap Start to open your camera</p>
-              <p class="live-sub" id="liveSub">Use a bright place, remove dark glasses, and hold the phone at eye level.</p>
+              <p class="live-instruction" id="liveInstruction">Liveness Check</p>
+              <p class="live-sub" id="liveSub"></p>
               <div class="live-steps" id="liveSteps" aria-label="Liveness steps"></div>
               <div class="live-progress"><i id="liveProgress"></i></div>
               <p class="live-status" id="liveStatus">Not started</p>
@@ -286,11 +271,9 @@
         <!-- STEP 5 -->
         <div class="fstep" data-step="5">
           <h3>Verification fee — Pay with Paystack</h3>
-          <p class="hint">The one-time verification fee is paid through Paystack before an application is confirmed.</p>
           <div class="fee-card">
             <small style="font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--green)">One-time verification</small>
             <div class="amt">₦3,000<span>.00</span></div>
-            <p style="color:#4c554c;font-size:14.5px;line-height:1.6;max-width:44ch;margin:0 auto">Covers NIN identity matching, document checks and the liveness confirmation in the live concept.</p>
           </div>
 
           <div class="ps-card">
@@ -308,29 +291,25 @@
                 <span class="ps-channel">USSD</span>
                 <span class="ps-channel">Bank Account</span>
               </div>
-              <div class="transfer-highlight"><b>Pay with Transfer:</b> tap Pay and Paystack generates a dedicated bank account number just for this payment. Transfer the ₦3,000 into it and Paystack confirms you automatically — the account number <b>expires after 30 minutes</b>, so complete the transfer within that window.</div>
               <div style="margin-top:16px"><button type="button" class="btn btn-paystack" id="feeBtn">Pay ₦3,000 with Paystack</button></div>
               <p class="ps-secure">Secured by Paystack</p>
               <p class="live-status" id="feeStatus" style="margin-top:8px"></p>
             </div>
           </div>
-          <div class="demo-note"><b>Test mode:</b> Tapping Pay opens the real Paystack popup in test mode — no real money moves. Choose <b>Transfer</b> to see the generated account number (it expires after 30 minutes), or pay with the Paystack test card <b>4084 0840 8408 4081</b>, any future expiry, CVV 408, and OTP 123456 if asked. Never use a real card or send a real transfer.</div>
         </div>
 
         <!-- STEP 6 -->
         <div class="fstep" data-step="6">
           <h3>How should you be paid?</h3>
-          <p class="hint">After verification, choose where your grant goes.</p>
           <div class="pay-options">
-            <label class="pay-opt"><input type="radio" name="pay" value="Site Wallet" checked><b>Site Wallet</b><p>Grant lands in your FGSG wallet instantly. Hold it there or withdraw to a bank later.</p></label>
-            <label class="pay-opt"><input type="radio" name="pay" value="Bank Account"><b>Bank Account</b><p>Grant is paid straight to the bank account you provide below.</p></label>
+            <label class="pay-opt"><input type="radio" name="pay" value="Grant Wallet" checked><b>Grant Wallet</b></label>
+            <label class="pay-opt"><input type="radio" name="pay" value="Bank Account"><b>Bank Account</b></label>
           </div>
-          <div class="fgrid" id="bankFields" style="display:none;margin-top:16px">
-            <label class="f">Bank name<input type="text" id="fBank" placeholder="Demo — e.g. GTBank, Access, FirstBank"></label>
-            <label class="f">Account number<input type="text" id="fAcct" inputmode="numeric" maxlength="10" placeholder="Demo only — dummy digits"></label>
+          <div class="fgrid" id="bankFields" style="display:none;margin-top:20px">
+            <label class="f">Bank name<input type="text" id="fBank" placeholder="e.g. GTBank, Access, FirstBank"></label>
+            <label class="f">Account number<input type="text" id="fAcct" inputmode="numeric" maxlength="10" placeholder="10 digits"></label>
             <label class="f" style="grid-column:1/-1">Account name<input type="text" id="fAcctName" placeholder="Name on the account"></label>
           </div>
-          <div class="demo-note">Review on the next screen before the demo submission is “filed”. Nothing leaves this page.</div>
         </div>
 
         <!-- SUCCESS -->
@@ -338,7 +317,7 @@
           <div class="success-box">
             <div class="tick">✓</div>
             <h3>Application Filed — Demo</h3>
-            <p class="hint" id="successSummary" style="max-width:52ch;margin:8px auto 0">Your concept application has been recorded in this presentation only.</p>
+            <p class="hint" id="successSummary" style="max-width:52ch;margin:8px auto 0">Application filed.</p>
             <div class="refcode" id="refCode">FGSG-DEMO-2026-0000</div>
             <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
               <button type="button" class="btn btn-green" onclick="showView('bank')">View Wallet &amp; Bank →</button>
@@ -358,37 +337,32 @@
     <div class="view" id="view-bank">
       <div class="grid-2">
         <div class="wallet">
-          <small>Site Wallet</small>
+          <small>Grant Wallet</small>
           <div class="bal" id="walletBal">₦0.00</div>
-          <p id="walletStatus">Complete verification in the Application tab to activate payout in this demo.</p>
+          <p id="walletStatus">Awaiting verification</p>
           <div class="pillrow"><span class="pill">Instant in-app payout</span><span class="pill">Withdraw anytime</span></div>
         </div>
         <div class="card-w">
           <h3>Bank Account</h3>
-          <p id="bankSummary">No payout method confirmed yet. Finish the application and pick <b>Bank Account</b> or <b>Site Wallet</b> on the final step — your choice will appear here.</p>
-          <ul class="checklist">
-            <li>Account name must match your application name</li>
-            <li>10-digit NUBAN account number</li>
-            <li>Payout follows successful verification</li>
-          </ul>
+          <p id="bankSummary">No payout method confirmed yet.</p>
         </div>
       </div>
     </div>
 
     <!-- NOTICES VIEW -->
     <div class="view" id="view-notices">
-      <div class="notice"><span class="dot"></span><div><time>Notice 01</time><h4>Welcome to the FGSG demo portal</h4><p>This is a competition presentation build. Explore the full application flow — no real application is being submitted.</p></div></div>
-      <div class="notice"><span class="dot"></span><div><time>Notice 02</time><h4>Keep your documents ready</h4><p>JAMB admission letter and NIN are required in the concept flow; a school fees receipt is optional but speeds up document checks.</p></div></div>
-      <div class="notice"><span class="dot"></span><div><time>Notice 03</time><h4>Two ways to receive your grant</h4><p>After verification you can be paid into your FGSG Site Wallet or directly to your bank account — you choose at the final step.</p></div></div>
+      <div class="notice"><span class="dot"></span><div><time>Notice 01</time><h4>Welcome to the FGSG demo portal</h4></div></div>
+      <div class="notice"><span class="dot"></span><div><time>Notice 02</time><h4>Keep your documents ready</h4></div></div>
+      <div class="notice"><span class="dot"></span><div><time>Notice 03</time><h4>Two ways to receive your grant</h4></div></div>
     </div>
 
     <!-- ME VIEW -->
     <div class="view" id="view-me">
       <div class="card-w">
         <h3>My Profile</h3>
-        <p id="profileSummary">No demo profile yet. Start the application and your details will be summarised here as you go — on this device only, for the presentation.</p>
-        <div class="account-box" id="accountBox">No account is signed in on this device.</div>
-        <div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-green" onclick="showView('application')">Go to Application →</button><button class="btn btn-outline-dark" onclick="authLogout()">Log out</button><button class="btn btn-outline-dark" id="deleteAcctBtn" onclick="authDeleteAccount()">Delete Account</button></div>
+        <p id="profileSummary">No profile yet.</p>
+        <div class="account-box" id="accountBox">Not signed in.</div>
+        <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-green" onclick="showView('application')">Go to Application →</button><button class="btn btn-outline-dark" onclick="authLogout()">Log out</button><button class="btn btn-outline-dark" id="deleteAcctBtn" onclick="authDeleteAccount()">Delete Account</button></div>
       </div>
     </div>
 
@@ -432,17 +406,14 @@
           <div class="ps-field"><small>Expiry</small><b>12 / 30</b></div>
           <div class="ps-field"><small>CVV</small><b>408</b></div>
         </div>
-        <p style="color:#667066;font-size:13.5px;line-height:1.55">Paystack test card only. Do not type a real card number in this demo.</p>
       </div>
       <div class="ps-panel on" data-ps-panel="transfer">
-        <div class="ps-field"><small>Bank</small><b>Wema Bank — Paystack-Titan (generated for you)</b></div>
-        <div class="ps-field"><small>Account number (demo)</small><b id="psTransferAcct">0123456789</b></div>
-        <div class="ps-field"><small>Expires</small><b>30 minutes from now</b></div>
-        <p style="color:#667066;font-size:13.5px;line-height:1.55">This account number is generated for this payment only and expires after 30 minutes. In test mode no real transfer is made — never send real money to it. Tap the pay button below to confirm the test payment.</p>
+        <div class="ps-field"><small>Bank</small><b>Wema Bank — Paystack-Titan</b></div>
+        <div class="ps-field"><small>Account number</small><b id="psTransferAcct">0123456789</b></div>
+        <div class="ps-field"><small>Expires</small><b>30 minutes</b></div>
       </div>
       <div class="ps-panel" data-ps-panel="ussd">
-        <div class="ps-field"><small>USSD code (demo)</small><b>*737*0000#</b></div>
-        <p style="color:#667066;font-size:13.5px;line-height:1.55">Demo code only — do not dial it. Tap the pay button below to confirm the test payment.</p>
+        <div class="ps-field"><small>USSD code</small><b>*737*0000#</b></div>
       </div>
       <p class="live-status" id="psModalStatus"></p>
       <div class="ps-modal-actions">
