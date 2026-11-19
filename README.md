@@ -10,4 +10,12 @@ Payments: Paystack test mode only, with a test public key. No real money moves. 
 
 Liveness: runs on-device with the camera, centre, turn left, turn right, tilt up, tilt down, then blink. No video is recorded or sent.
 
+## Structure
+
+- `index.html` — markup only
+- `assets/styles.css` — all styles
+- `assets/app.js` — routing, auth, dock nav, application form
+- `assets/liveness.js` — MediaPipe face scan
+- `assets/payment.js` — Paystack Step 5, payout and submission
+
 Open index.html to view the site.

@@ -1,0 +1,229 @@
+/* ============================================================
+   FGSG demo — liveness check
+   Real on-device face scan using MediaPipe Face Mesh.
+   Depends on helpers from app.js (loadScriptOnce, toast) and
+   the shared liveDone flag declared there.
+   ============================================================ */
+
+/* ---------- liveness: real on-device face scan (MediaPipe Face Mesh) ---------- */
+var LIVE_STEPS=[
+  {id:'center', chip:'Centre', arrow:'◎', title:'Look straight at the camera', sub:'Centre your face inside the oval and hold still'},
+  {id:'left', chip:'Turn left', arrow:'←', title:'Turn your face LEFT', sub:'Slowly turn your head towards the arrow — your left'},
+  {id:'right', chip:'Turn right', arrow:'→', title:'Turn your face RIGHT', sub:'Slowly turn your head the other way — your right'},
+  {id:'up', chip:'Tilt up', arrow:'↑', title:'Tilt your face UP', sub:'Lift your chin and look slightly up'},
+  {id:'down', chip:'Tilt down', arrow:'↓', title:'Tilt your face DOWN', sub:'Drop your chin and look slightly down'},
+  {id:'blink', chip:'Blink', arrow:'◉', title:'Now blink', sub:'Close both eyes fully, then open them again'}
+];
+var liveIdx=0, liveRunning=false, liveStream=null, liveMesh=null, liveRAF=0, liveSending=false;
+var liveHold=0, liveBase=null, liveBlinkPhase=0, liveFaceSeen=false, liveNoFaceFrames=0;
+var liveEls={};
+['liveFrame','liveVideo','liveCanvas','liveBadge','liveArrow','liveInstruction','liveSub','liveStatus','liveSteps','liveProgress','liveBtn','liveRetryBtn'].forEach(function(id){liveEls[id]=document.getElementById(id);});
+
+function liveRenderChips(){
+  liveEls.liveSteps.innerHTML='';
+  LIVE_STEPS.forEach(function(s,i){
+    var c=document.createElement('span');
+    c.className='live-chip'+(i<liveIdx||liveDone?' done':(i===liveIdx&&liveRunning?' active':''));
+    c.innerHTML='<span class="n">'+(i<liveIdx||liveDone?'✓':(i+1))+'</span>'+s.chip;
+    liveEls.liveSteps.appendChild(c);
+  });
+  liveEls.liveProgress.style.width=Math.round((liveDone?LIVE_STEPS.length:liveIdx)/LIVE_STEPS.length*100)+'%';
+}
+function liveSetInstruction(){
+  var s=LIVE_STEPS[liveIdx];
+  if(!s) return;
+  liveEls.liveInstruction.textContent=s.title;
+  liveEls.liveSub.textContent=s.sub;
+  liveEls.liveArrow.textContent=s.arrow;
+  liveEls.liveArrow.classList.add('pulse');
+}
+function liveSetBadge(txt,cls){
+  liveEls.liveBadge.textContent=txt;
+  liveEls.liveBadge.className='live-badge'+(cls?' '+cls:'');
+}
+function liveStopCamera(){
+  liveRunning=false; liveSending=false;
+  if(liveRAF) cancelAnimationFrame(liveRAF); liveRAF=0;
+  if(liveStream){ liveStream.getTracks().forEach(function(t){t.stop();}); liveStream=null; }
+  if(liveEls.liveVideo) liveEls.liveVideo.srcObject=null;
+  liveEls.liveFrame.classList.remove('scanning');
+}
+function liveFail(msg){
+  liveStopCamera();
+  liveEls.liveFrame.classList.remove('on');
+  liveEls.liveStatus.className='live-status err';
+  liveEls.liveStatus.textContent=msg;
+  liveEls.liveInstruction.textContent='Liveness check could not run';
+  liveEls.liveSub.textContent='Check that camera permission is allowed for this site, then tap Try Again.';
+  liveSetBadge('Camera blocked','bad');
+  liveEls.liveBtn.style.display='none';
+  liveEls.liveRetryBtn.style.display='inline-flex';
+  liveRenderChips();
+}
+function liveReset(){
+  liveDone=false; liveIdx=0; liveHold=0; liveBase=null; liveBlinkPhase=0; liveFaceSeen=false; liveNoFaceFrames=0;
+  liveStopCamera();
+  liveEls.liveFrame.classList.remove('on','done','face-ok');
+  var ctx=liveEls.liveCanvas.getContext('2d'); ctx.clearRect(0,0,liveEls.liveCanvas.width,liveEls.liveCanvas.height);
+  liveEls.liveStatus.className='live-status';
+  liveEls.liveStatus.textContent='Not started';
+  liveEls.liveInstruction.textContent='Tap Start to open your camera';
+  liveEls.liveSub.textContent='Use a bright place, remove dark glasses, and hold the phone at eye level.';
+  liveEls.liveArrow.textContent='◎'; liveEls.liveArrow.classList.remove('pulse');
+  liveSetBadge('Camera not started','');
+  liveEls.liveBtn.style.display='inline-flex';
+  liveEls.liveBtn.disabled=false;
+  liveEls.liveBtn.textContent='Start Liveness Check — Open Camera';
+  liveEls.liveRetryBtn.style.display='none';
+  liveRenderChips();
+}
+function liveSucceed(){
+  liveDone=true; liveIdx=LIVE_STEPS.length;
+  liveStopCamera();
+  liveEls.liveFrame.classList.remove('on');
+  liveEls.liveFrame.classList.add('done','face-ok');
+  liveEls.liveStatus.className='live-status ok';
+  liveEls.liveStatus.textContent='✓ Liveness confirmed — real face scan passed. You can continue.';
+  liveEls.liveInstruction.textContent='Liveness check passed ✓';
+  liveEls.liveSub.textContent='Centre ✓ · Left ✓ · Right ✓ · Up ✓ · Down ✓ · Blink ✓';
+  liveEls.liveBtn.style.display='none';
+  liveEls.liveRetryBtn.style.display='inline-flex';
+  liveEls.liveRetryBtn.textContent='Scan Again';
+  liveRenderChips();
+  toast('Liveness check passed ✓');
+}
+function liveDist(a,b){ var dx=a.x-b.x, dy=a.y-b.y; return Math.sqrt(dx*dx+dy*dy); }
+function liveEAR(lm,p){
+  var v1=liveDist(lm[p[1]],lm[p[5]]), v2=liveDist(lm[p[2]],lm[p[4]]), h=liveDist(lm[p[0]],lm[p[3]]);
+  return h>0 ? (v1+v2)/(2*h) : 0.3;
+}
+function liveAdvance(){
+  liveIdx++; liveHold=0; liveBlinkPhase=0;
+  if(liveIdx>=LIVE_STEPS.length){ liveSucceed(); return; }
+  liveSetInstruction(); liveRenderChips();
+  liveEls.liveStatus.className='live-status ok';
+  liveEls.liveStatus.textContent='✓ '+(LIVE_STEPS[liveIdx-1].chip)+' — good. Next: '+LIVE_STEPS[liveIdx].chip+'.';
+}
+function liveOnResults(results){
+  liveSending=false;
+  if(!liveRunning) return;
+  var canvas=liveEls.liveCanvas, ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  var lm = results.multiFaceLandmarks && results.multiFaceLandmarks.length ? results.multiFaceLandmarks[0] : null;
+  if(!lm){
+    liveFaceSeen=false; liveHold=0; liveNoFaceFrames++;
+    liveEls.liveFrame.classList.remove('face-ok');
+    liveSetBadge('No face found','bad');
+    if(liveNoFaceFrames>12){ liveEls.liveStatus.className='live-status'; liveEls.liveStatus.textContent='No face in view — move into the light and centre your face in the oval.'; }
+    return;
+  }
+  liveNoFaceFrames=0;
+  if(!liveFaceSeen){ liveFaceSeen=true; liveSetBadge('Face found — scanning','ok'); }
+  /* draw a few tracking dots so the presenter can see the scan is live */
+  ctx.fillStyle='rgba(142,230,58,.9)';
+  [1,33,263,10,152].forEach(function(i){ var p=lm[i]; ctx.beginPath(); ctx.arc(p.x*canvas.width,p.y*canvas.height,4,0,6.2832); ctx.fill(); });
+  ctx.strokeStyle='rgba(142,230,58,.55)'; ctx.lineWidth=2; ctx.beginPath();
+  var oval=[57,133,195,93,2,5,164,1,162,14,13,311,402,14,317,182];
+  oval.forEach(function(i,k){ var p=lm[i]; if(k===0) ctx.moveTo(p.x*canvas.width,p.y*canvas.height); else ctx.lineTo(p.x*canvas.width,p.y*canvas.height); });
+  ctx.closePath(); ctx.stroke();
+
+  var nose=lm[1], lCheek=lm[234], rCheek=lm[454], fore=lm[10], chin=lm[152];
+  var cheekSpan=Math.abs(rCheek.x-lCheek.x);
+  var yaw=(nose.x-lCheek.x)/((rCheek.x-lCheek.x)||0.001);
+  var pitch=(nose.y-fore.y)/((chin.y-fore.y)||0.001);
+  var ear=(liveEAR(lm,[33,160,158,133,153,144])+liveEAR(lm,[362,385,387,263,373,380]))/2;
+  var cur=LIVE_STEPS[liveIdx]; if(!cur) return;
+
+  if(cur.id==='center'){
+    var centred = yaw>0.40 && yaw<0.60 && pitch>0.34 && pitch<0.66;
+    if(cheekSpan<0.16){ liveEls.liveStatus.textContent='Move a little closer to the camera.'; liveHold=0; liveEls.liveFrame.classList.remove('face-ok'); return; }
+    if(cheekSpan>0.62){ liveEls.liveStatus.textContent='Move a little further back.'; liveHold=0; return; }
+    liveEls.liveFrame.classList.toggle('face-ok',centred);
+    if(centred){
+      if(!liveBase) liveBase={yaw:0,pitch:0,ear:0,n:0};
+      liveBase.yaw+=yaw; liveBase.pitch+=pitch; liveBase.ear+=ear; liveBase.n++;
+      liveHold++;
+      liveEls.liveStatus.textContent='Face centred — hold still… ('+Math.min(100,Math.round(liveHold/12*100))+'%)';
+      if(liveHold>=12){ liveBase.yaw/=liveBase.n; liveBase.pitch/=liveBase.n; liveBase.ear/=liveBase.n; liveAdvance(); }
+    } else { liveHold=0; liveEls.liveStatus.textContent='Centre your face in the oval and look straight ahead.'; }
+    return;
+  }
+  var bYaw=liveBase?liveBase.yaw:0.5, bPitch=liveBase?liveBase.pitch:0.5, bEar=liveBase?liveBase.ear:0.28;
+  var ok=false, need=9;
+  if(cur.id==='left') ok = yaw<=bYaw-0.08;
+  if(cur.id==='right') ok = yaw>=bYaw+0.08;
+  if(cur.id==='up') ok = pitch<=bPitch-0.05;
+  if(cur.id==='down') ok = pitch>=bPitch+0.05;
+  if(cur.id==='blink'){
+    var closed = ear < Math.min(0.175, bEar*0.68);
+    var open = ear > Math.max(0.20, bEar*0.85);
+    if(liveBlinkPhase===0 && closed){ liveBlinkPhase=1; liveEls.liveStatus.textContent='Eyes closed — now open them…'; }
+    else if(liveBlinkPhase===1 && open){ liveAdvance(); return; }
+    else if(liveBlinkPhase===0){ liveEls.liveStatus.textContent='Blink now — close both eyes fully, then open.'; }
+    return;
+  }
+  if(ok){
+    liveHold++;
+    liveEls.liveFrame.classList.add('face-ok');
+    liveEls.liveStatus.textContent=cur.chip+' detected — hold it… ('+Math.min(100,Math.round(liveHold/need*100))+'%)';
+    if(liveHold>=need) liveAdvance();
+  } else {
+    liveHold=0; liveEls.liveFrame.classList.remove('face-ok');
+    liveEls.liveStatus.textContent=cur.title+' — follow the arrow slowly.';
+  }
+}
+async function liveLoop(){
+  if(!liveRunning) return;
+  var v=liveEls.liveVideo;
+  if(v.readyState>=2 && !liveSending){ liveSending=true; try{ await liveMesh.send({image:v}); }catch(e){ liveSending=false; } }
+  liveRAF=requestAnimationFrame(liveLoop);
+}
+liveEls.liveBtn.addEventListener('click',async function(){
+  liveEls.liveBtn.disabled=true;
+  liveEls.liveStatus.className='live-status';
+  liveEls.liveStatus.textContent='Opening camera… allow camera access if asked.';
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    liveFail('This browser cannot open a camera here. Open the page in Chrome or Safari over HTTPS and try again.');
+    return;
+  }
+  if(typeof FaceMesh==='undefined'){
+    liveEls.liveStatus.textContent='Loading the face scanner…';
+    try{ await loadScriptOnce('https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js'); }catch(e){}
+  }
+  if(typeof FaceMesh==='undefined'){
+    liveEls.liveBtn.disabled=false;
+    liveFail('The face-scan library did not load — check your internet connection and tap Try Again.');
+    return;
+  }
+  try{
+    liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:false});
+  }catch(err){
+    liveFail('Camera access was blocked or no camera was found. Allow the camera for this site, then tap Try Again.');
+    return;
+  }
+  try{
+    if(!liveMesh){
+      liveMesh=new FaceMesh({locateFile:function(file){return 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/'+file;}});
+      liveMesh.setOptions({maxNumFaces:1,refineLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+      liveMesh.onResults(liveOnResults);
+    }
+    liveEls.liveVideo.srcObject=liveStream;
+    await liveEls.liveVideo.play();
+  }catch(err){
+    liveFail('The face scanner could not start. Check your connection and tap Try Again.');
+    return;
+  }
+  liveIdx=0; liveHold=0; liveBase=null; liveBlinkPhase=0; liveFaceSeen=false; liveNoFaceFrames=0;
+  liveRunning=true;
+  liveEls.liveFrame.classList.add('on','scanning');
+  liveEls.liveFrame.classList.remove('done');
+  liveEls.liveBtn.style.display='none';
+  liveEls.liveRetryBtn.style.display='none';
+  liveSetBadge('Scanning…','');
+  liveSetInstruction(); liveRenderChips();
+  liveEls.liveStatus.textContent='Camera on — centre your face in the oval.';
+  liveLoop();
+});
+liveEls.liveRetryBtn.addEventListener('click',function(){ liveReset(); liveEls.liveBtn.click(); });
+window.__stopLiveCamera=liveStopCamera;
+liveRenderChips();
