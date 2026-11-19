@@ -36,6 +36,7 @@ function setFeeStatus(msg,ok){
 }
 function completePaystackPayment(ref){
   feeDone=true;
+  if(typeof saveDraft==='function') saveDraft();
   setFeeStatus('Payment received — Pending, waiting for approval · Ref: '+ref,true);
   document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000';
   var pending=document.getElementById('feePending');
@@ -107,6 +108,8 @@ function renderProfile(){
 function submitApplication(){
   step=7; renderStep();
   var ref='FGSG-2026-'+Math.floor(1000+Math.random()*9000);
+  if(typeof draftAppRef!=='undefined') draftAppRef=ref;
+  if(typeof saveDraft==='function') saveDraft();
   document.getElementById('refCode').textContent=ref;
   var pay=document.querySelector('input[name="pay"]:checked').value;
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';

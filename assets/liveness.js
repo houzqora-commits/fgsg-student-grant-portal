@@ -94,6 +94,7 @@ function liveFail(msg){
 }
 function liveSucceed(){
   liveDone=true; liveIdx=LIVE_STEPS.length;
+  if(typeof saveDraft==='function') saveDraft();
   liveStopCamera();
   liveEls.liveFrame.classList.remove('on');
   liveEls.liveFrame.classList.add('done','face-ok');

@@ -27,7 +27,6 @@
     }).catch(function(){});
   }
   try{
-    sessionStorage.clear();
     for(var i=localStorage.length-1;i>=0;i--){
       var k=localStorage.key(i);
       if(k && (k.indexOf('fgsg_ui')===0 || k.indexOf('fgsg_state')===0 || k.indexOf('fgsg_page')===0 || k.indexOf('fgsg_view')===0 || k.indexOf('fgsg_step')===0)){ localStorage.removeItem(k); }
@@ -38,7 +37,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=20">
+<link rel="stylesheet" href="assets/styles.css?v=21">
 </head>
 <body>
 
@@ -68,7 +67,7 @@
       <p class="tagline">…Empowering Nigerian Students for a Brighter Future</p>
       <p class="sub">A single portal for students in universities and polytechnics across Nigeria — apply once, verify your identity, and receive your grant to your Grant Wallet or bank account.</p>
       <div class="hero-cta">
-        <a class="btn btn-lime" href="#auth" onclick="goPage('auth','signup');return false;">Start Application →</a>
+        <a class="btn btn-lime" id="heroCtaBtn" href="#auth" onclick="goPage('auth','signup');return false;">Start Application →</a>
         <a class="btn btn-ghost" href="#how">See How It Works</a>
       </div>
     </div>
@@ -123,12 +122,11 @@
 <!-- FAQS -->
 <section class="block" id="faqs">
   <div class="sec-head"><h2>FA<span>Qs</span></h2></div>
-  <details><summary>Is the last school fees receipt compulsory?</summary><div class="a">Yes. Required.</div></details>
-  <details><summary>Which institutions are covered?</summary><div class="a">Universities, polytechnics and colleges of education — ND to 600 level.</div></details>
-  <details><summary>What is the liveness check?</summary><div class="a">On-device face scan: centre, turn, tilt, blink.</div></details>
-  <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">Paystack — card, bank transfer, USSD or bank account.</div></details>
-  <details><summary>How do I receive the grant after verification?</summary><div class="a">Grant Wallet or bank account.</div></details>
-  <details><summary>Where is my account saved?</summary><div class="a">In this browser only.</div></details>
+  <details><summary>Is the last school fees receipt compulsory?</summary><div class="a">Yes, it is compulsory. You upload it at the Documents &amp; identity step, together with your JAMB admission letter, and the application will not move forward without it. It should be the receipt for your most recent school fees payment at your institution, uploaded as a PDF or a clear photo or scan of the receipt.</div></details>
+  <details><summary>Which institutions are covered?</summary><div class="a">The grant covers students in universities, polytechnics and colleges of education across all 36 states and the FCT. All levels are eligible, from ND and HND through to 100 level to 600 level. During the application you select your institution type, institution name, department and level from the lists provided.</div></details>
+  <details><summary>What is the liveness check?</summary><div class="a">The liveness check is a short face scan that confirms you are a real, live person and not a photo or someone else applying in your name. At the Documents &amp; identity step, tap Face Scan / Liveness Check to open the full-screen scan, then follow the instructions shown on the camera view: centre your face in the frame, turn and tilt your head as directed, and blink when asked. Once every step is completed, the scan is marked as confirmed and you can continue.</div></details>
+  <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">The ₦3,000 is a one-time verification fee, paid at the Verification fee step through Paystack. You can pay by card, bank transfer, USSD or bank account, with bank transfer shown as the recommended option. Your email address and payment reference are shown on that step before you pay. Once the payment goes through, your application shows as Pending — Waiting for Approval.</div></details>
+  <details><summary>How do I receive the grant after verification?</summary><div class="a">At the final step of the application, you choose how you want to be paid: Grant Wallet or Bank Account. With Grant Wallet, the grant goes to your FGSG Grant Wallet, where you can see your balance and status in the Bank section of your dashboard. With Bank Account, you provide your bank name, your 10-digit account number and the name on the account, and the grant is paid to that account instead. After you submit, your application shows as Pending — Waiting for Approval, with your application reference.</div></details>
 </section>
 
 <!-- HELP -->
@@ -217,6 +215,7 @@
     <!-- APPLICATION VIEW -->
     <div class="view" id="view-application">
       <div class="progress-head"><b id="stepTitle">Application — Start</b><b id="stepPct" style="color:var(--green)">0%</b></div>
+      <div class="draft-row"><span class="draft-saved" id="draftSaved"></span><button type="button" class="btn-restart" id="restartAppBtn" style="display:none">Restart application</button></div>
       <div class="progressbar"><i id="pbar"></i></div>
 
       <form class="form-card" id="appForm" novalidate>
@@ -464,9 +463,9 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/auth.js?v=20"></script>
-<script src="assets/app.js?v=20"></script>
-<script src="assets/liveness.js?v=20"></script>
-<script src="assets/payment.js?v=20"></script>
+<script src="assets/auth.js?v=21"></script>
+<script src="assets/app.js?v=21"></script>
+<script src="assets/liveness.js?v=21"></script>
+<script src="assets/payment.js?v=21"></script>
 </body>
 </html>

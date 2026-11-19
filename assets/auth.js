@@ -97,18 +97,22 @@ var FGSGAuth = (function(){
     return deriveHash(String(password||''), user.salt, user.iterations||ITERATIONS)
       .then(function(h){ return safeEqual(h, user.hash); });
   }
+  /* The session lives in sessionStorage, so it ends when the
+     browser closes. Accounts stay in localStorage as before;
+     any older localStorage session is dropped on sight. */
+  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
   function startSession(email){
     if(!storageOk()) return null;
     var sess={email:normalizeEmail(email), token:randomHex(24), expiresAt:Date.now()+SESSION_MS};
-    try{ localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }catch(e){ return null; }
+    try{ sessionStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }catch(e){ return null; }
     return sess;
   }
   function currentSession(){
     if(!storageOk()) return null;
     try{
-      var raw=localStorage.getItem(SESSION_KEY); if(!raw) return null;
+      var raw=sessionStorage.getItem(SESSION_KEY); if(!raw) return null;
       var s=JSON.parse(raw);
-      if(!s || !s.email || !s.expiresAt || Date.now()>s.expiresAt){ localStorage.removeItem(SESSION_KEY); return null; }
+      if(!s || !s.email || !s.expiresAt || Date.now()>s.expiresAt){ sessionStorage.removeItem(SESSION_KEY); return null; }
       return s;
     }catch(e){ return null; }
   }
@@ -118,6 +122,7 @@ var FGSGAuth = (function(){
     return {name:u.name, email:u.email, createdAt:u.createdAt};
   }
   function logout(){
+    try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
     try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
   }
   function signup(name, email, password){
@@ -229,6 +234,16 @@ function updateAuthUI(){
       applyLink.onclick=function(){ goPage('auth','signup'); return false; };
     }
   }
+  var heroBtn=document.getElementById('heroCtaBtn');
+  if(heroBtn){
+    if(user){
+      heroBtn.textContent='Dashboard';
+      heroBtn.onclick=function(){ goPage('app'); return false; };
+    } else {
+      heroBtn.textContent='Start Application →';
+      heroBtn.onclick=function(){ goPage('auth','signup'); return false; };
+    }
+  }
   var box=document.getElementById('accountBox');
   if(box){
     if(user){
@@ -322,7 +337,9 @@ function authDeleteAccount(){
     setTimeout(function(){ if(btn){ delete btn.dataset.armed; btn.textContent='Delete Account'; } }, 4000);
     return;
   }
+  var delUser=FGSGAuth.currentUser();
   if(FGSGAuth.deleteAccount()){
+    if(delUser){ try{ localStorage.removeItem('fgsg_draft_v1_'+delUser.email); }catch(e){} }
     if(btn){ delete btn.dataset.armed; btn.textContent='Delete Account'; }
     updateAuthUI();
     goPage('landing');

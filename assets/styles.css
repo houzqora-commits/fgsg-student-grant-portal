@@ -179,6 +179,12 @@ section.block{max-width:var(--wrap);margin:0 auto;padding:var(--section-y) var(-
 .progress-head b{font-family:"Archivo";font-size:18px;line-height:1.3}
 .progressbar{height:8px;background:#dde3dd;border-radius:99px;overflow:hidden;border:1px solid #b9c2b9;margin-bottom:var(--s6)}
 .progressbar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--lime));width:16.6%;transition:width .35s ease}
+/* draft row — saved status + tiny restart, above the progress bar */
+.draft-row{max-width:680px;margin:0 auto var(--s3);display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:32px}
+.draft-saved{font-size:12px;font-weight:700;color:#667066}
+.btn-restart{background:transparent;border:1.5px solid #b9c2b9;color:#4c554c;border-radius:999px;font-size:12px;font-weight:700;line-height:1.2;padding:6px 12px;min-height:32px;align-items:center;transition:transform .08s ease}
+.btn-restart:active{transform:scale(.96)}
+.btn-restart.armed{border-color:#b3261e;color:#b3261e;background:#fdf0ef}
 .form-card{background:#fff;border:1.5px solid #0b0d0b;border-radius:16px;box-shadow:5px 5px 0 var(--green);padding:var(--s6);max-width:680px;margin:0 auto}
 @media(max-width:560px){.form-card{padding:var(--s5)}}
 .fstep{display:none}

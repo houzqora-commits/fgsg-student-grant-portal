@@ -76,6 +76,7 @@ function pickerSetValue(key,value){
       var lt=document.getElementById(lgaDef.text); lt.textContent=lgaDef.placeholder; lt.classList.add('ph');
     }
   }
+  if(typeof saveDraft==='function') saveDraft();
 }
 function renderPickerList(){
   var def=PICKER_DEFS[pickerKey]; if(!def) return;
@@ -171,7 +172,7 @@ function goLandingAnchor(e,id){
   e.preventDefault(); goPage('landing');
   setTimeout(function(){ var t=document.getElementById(id); if(t) t.scrollIntoView({behavior:'smooth'}); },60);
 }
-function enterApp(view){ goPage('app'); showView(view||'home'); }
+function enterApp(view){ if(typeof restoreDraft==='function') restoreDraft(); goPage('app'); showView(view||'home'); }
 function switchAuthTab(name){
   document.querySelectorAll('[data-auth-tab]').forEach(function(t){t.classList.toggle('on',t.dataset.authTab===name)});
   document.querySelectorAll('[data-auth-panel]').forEach(function(p){p.classList.toggle('on',p.dataset.authPanel===name)});
@@ -224,6 +225,11 @@ function renderStep(){
   document.getElementById('backBtn').style.visibility= step===1||step===7 ? 'hidden':'visible';
   document.getElementById('nextBtn').textContent= step===6 ? 'Submit Application ✓' : 'Continue →';
   document.getElementById('formNav').style.display= step===1||step===7 ? 'none':'flex';
+  var rb=document.getElementById('restartAppBtn');
+  if(rb){
+    rb.style.display= step>1 ? 'inline-flex':'none';
+    if(step===1){ delete rb.dataset.armed; rb.classList.remove('armed'); rb.textContent='Restart application'; }
+  }
   if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
 }
 function val(id){return document.getElementById(id).value.trim();}
@@ -267,22 +273,125 @@ function validateStep1Async(){
 function validateStep(){
   if(step===2){ if(!val('fName')||!val('fDob')||!val('fState')||!val('fLga')){toast('Complete name, date of birth, state of origin and LGA');return false;} }
   if(step===3){ if(!val('fType')||!val('fLevel')||!val('fSchool')||!val('fDept')){toast('Complete institution type, level, institution and department');return false;} }
-  if(step===4){ if(!document.getElementById('upJamb').files.length){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
+  if(step===4){ if(!document.getElementById('upJamb').files.length && !draftJambName){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length && !draftFeesName){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
   if(step===5){ if(!feeDone){toast('Pay the ₦3,000 verification fee with Paystack to continue');return false;} }
   return true;
 }
 var startAppBtn=document.getElementById('startAppBtn');
 if(startAppBtn){ startAppBtn.addEventListener('click',function(){
-  step=2; renderStep();
+  step=2; renderStep(); saveDraft();
   window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
 });}
 document.getElementById('nextBtn').addEventListener('click',function(){
-  if(step<6){ if(!validateStep())return; step++; renderStep(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
+  if(step<6){ if(!validateStep())return; step++; renderStep(); saveDraft(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
   else if(step===6){ submitApplication(); }
 });
-document.getElementById('backBtn').addEventListener('click',function(){ if(step>1){step--;renderStep();} });
+document.getElementById('backBtn').addEventListener('click',function(){ if(step>1){step--;renderStep();saveDraft();} });
 
-/* uploads */
+/* uploads — the draft keeps the attached file names, because a page
+   cannot refill a file input after a reload */
 [['upJamb','okJamb'],['upFees','okFees']].forEach(function(pair){
-  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+e.target.files[0].name+' attached'; }});
+  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; if(pair[0]==='upJamb') draftJambName=nm; else draftFeesName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
 });
+
+/* ---------- application draft: progress saves at every step ----------
+   The draft lives in this browser only (localStorage), keyed by the
+   signed-in email — the same device-only storage the accounts use.
+   Closing the page mid-application and coming back restores the step
+   and every answer, so an applicant who stopped at Step 3 reopens
+   the form on Step 3 with their details filled in. Restart clears
+   the draft for this account and returns the form to Step 1. */
+var draftJambName='', draftFeesName='', draftAppRef='', draftRestoredFor=null;
+function draftKey(){
+  var u=(window.FGSGAuth && FGSGAuth.currentUser())?FGSGAuth.currentUser():null;
+  var e=u?u.email:(document.getElementById('fEmail').value||'').trim().toLowerCase();
+  return 'fgsg_draft_v1_'+(e||'guest');
+}
+function draftHasProgress(d){
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName);
+}
+function collectDraft(){
+  var payEl=document.querySelector('input[name="pay"]:checked');
+  return {step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===7&&!!draftAppRef};
+}
+function saveDraft(){
+  try{
+    var d=collectDraft(), key=draftKey(), note=document.getElementById('draftSaved');
+    if(!draftHasProgress(d)){ localStorage.removeItem(key); if(note) note.textContent=''; return; }
+    localStorage.setItem(key,JSON.stringify(d));
+    if(note) note.textContent='Saved ✓';
+  }catch(e){}
+}
+function setField(id,v){ var el=document.getElementById(id); if(el) el.value=v||''; }
+function restoreDraft(){
+  var key=draftKey();
+  if(draftRestoredFor===key) return;
+  draftRestoredFor=key;
+  var d=null;
+  try{ var raw=localStorage.getItem(key); if(raw) d=JSON.parse(raw); }catch(e){}
+  if(!d) return;
+  setField('fName',d.name); setField('fDob',d.dob); setField('fNin',d.nin);
+  setField('fAcct',d.acct); setField('fAcctName',d.acctName);
+  if(d.state) pickerSetValue('state',d.state);
+  if(d.lga) pickerSetValue('lga',d.lga);
+  if(d.type) pickerSetValue('type',d.type);
+  if(d.level) pickerSetValue('level',d.level);
+  if(d.school) pickerSetValue('school',d.school);
+  if(d.dept) pickerSetValue('dept',d.dept);
+  if(d.bank) pickerSetValue('bank',d.bank);
+  var payVal=d.pay||'Grant Wallet';
+  document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value===payVal); });
+  document.getElementById('bankFields').style.display= payVal==='Bank Account' ? 'grid':'none';
+  draftJambName=d.jambName||''; draftFeesName=d.feesName||'';
+  if(draftJambName){ var okJ=document.getElementById('okJamb'); okJ.style.display='block'; okJ.textContent='✓ '+draftJambName+' attached'; }
+  if(draftFeesName){ var okF=document.getElementById('okFees'); okF.style.display='block'; okF.textContent='✓ '+draftFeesName+' attached'; }
+  if(d.liveDone){ liveDone=true; if(typeof liveSetEntry==='function'){ liveSetEntry('✓ Liveness confirmed','ok'); document.getElementById('liveOpenBtn').textContent='Scan Again'; } }
+  if(d.feeDone){ feeDone=true; document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000'; var fp=document.getElementById('feePending'); if(fp) fp.style.display='flex'; document.getElementById('walletStatus').textContent='Pending — Waiting for Approval'; }
+  draftAppRef=d.appRef||'';
+  if(d.submitted && draftAppRef){
+    document.getElementById('refCode').textContent=draftAppRef;
+    var nm=(d.name||'Applicant'), sc=(d.school||'your institution');
+    document.getElementById('successSummary').textContent=nm.split(' ')[0]+' · '+sc+' · '+payVal+' · Pending — Waiting for Approval';
+    var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
+    document.getElementById('bankSummary').innerHTML='<b>'+esc(payVal)+'</b>'+(payVal==='Bank Account'&&d.bank?' · <b>'+esc(d.bank)+'</b> •••'+esc((d.acct||'').slice(-3)||'000'):'');
+    document.getElementById('walletStatus').textContent='Pending — Waiting for Approval';
+  }
+  step=Math.min(7,Math.max(1,+d.step||1));
+  renderStep();
+  var note=document.getElementById('draftSaved'); if(note && draftHasProgress(d)) note.textContent='Saved ✓';
+  saveDraft();
+}
+function restartApplication(){
+  var btn=document.getElementById('restartAppBtn');
+  if(btn && !btn.dataset.armed){
+    btn.dataset.armed='1'; btn.classList.add('armed'); btn.textContent='Tap again to restart';
+    setTimeout(function(){ if(btn){ delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent='Restart application'; } },4000);
+    return;
+  }
+  try{ localStorage.removeItem(draftKey()); }catch(e){}
+  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fBank','fAcct','fAcctName'].forEach(function(id){ setField(id,''); });
+  Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
+  draftJambName=''; draftFeesName=''; draftAppRef='';
+  ['upJamb','upFees'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['okJamb','okFees'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value==='Grant Wallet'); });
+  document.getElementById('bankFields').style.display='none';
+  liveDone=false; if(typeof liveReset==='function') liveReset();
+  feeDone=false;
+  var fb=document.getElementById('feeBtn'); fb.disabled=false; fb.textContent='Pay ₦3,000';
+  var fp2=document.getElementById('feePending'); if(fp2) fp2.style.display='none';
+  var fs=document.getElementById('feeStatus'); if(fs) fs.textContent='';
+  document.getElementById('walletStatus').textContent='Awaiting verification';
+  var bs=document.getElementById('bankSummary'); if(bs) bs.textContent='No payout method confirmed yet.';
+  var note2=document.getElementById('draftSaved'); if(note2) note2.textContent='';
+  if(btn){ delete btn.dataset.armed; btn.classList.remove('armed'); btn.textContent='Restart application'; }
+  step=1; renderStep();
+  window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
+  toast('Application restarted');
+}
+var restartBtnEl=document.getElementById('restartAppBtn');
+if(restartBtnEl) restartBtnEl.addEventListener('click',restartApplication);
+var appFormEl=document.getElementById('appForm');
+if(appFormEl){ appFormEl.addEventListener('input',saveDraft); appFormEl.addEventListener('change',saveDraft); }
+window.addEventListener('pagehide',saveDraft);
+window.addEventListener('load',function(){ restoreDraft(); });
