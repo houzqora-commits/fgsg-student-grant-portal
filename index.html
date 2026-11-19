@@ -4,11 +4,41 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 <meta name="color-scheme" content="dark light"/>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+<meta http-equiv="Pragma" content="no-cache"/>
+<meta http-equiv="Expires" content="0"/>
 <link rel="icon" href="data:,">
 <title>Federal Government Student Grant (FGSG) — Competition Demo</title>
+<script>
+/* Always show the newest build on reload: drop any service worker
+   or Cache Storage left by an older version, clear saved UI state
+   (never the demo accounts), and never restore a stale page from
+   the back/forward cache. Asset URLs below carry ?v=15 so a reload
+   fetches fresh CSS/JS instead of a cached copy. */
+(function(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(r){ r.unregister(); });
+    }).catch(function(){});
+  }
+  if(window.caches && caches.keys){
+    caches.keys().then(function(keys){
+      keys.forEach(function(k){ caches.delete(k); });
+    }).catch(function(){});
+  }
+  try{
+    sessionStorage.clear();
+    for(var i=localStorage.length-1;i>=0;i--){
+      var k=localStorage.key(i);
+      if(k && (k.indexOf('fgsg_ui')===0 || k.indexOf('fgsg_state')===0 || k.indexOf('fgsg_page')===0 || k.indexOf('fgsg_view')===0 || k.indexOf('fgsg_step')===0)){ localStorage.removeItem(k); }
+    }
+  }catch(e){}
+  window.addEventListener('pageshow',function(e){ if(e.persisted){ window.location.reload(); } });
+})();
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/styles.css?v=15">
 </head>
 <body>
 
@@ -189,16 +219,18 @@
 
     <!-- APPLICATION VIEW -->
     <div class="view" id="view-application">
-      <div class="progress-head"><b id="stepTitle">Step 1 of 6 — Create your account</b><b id="stepPct" style="color:var(--green)">17%</b></div>
+      <div class="progress-head"><b id="stepTitle">Application — Start</b><b id="stepPct" style="color:var(--green)">0%</b></div>
       <div class="progressbar"><i id="pbar"></i></div>
 
       <form class="form-card" id="appForm" novalidate>
-        <!-- STEP 1 -->
+        <!-- STEP 1 — START -->
         <div class="fstep active" data-step="1">
-          <h3>Login details</h3>
-          <div class="fgrid">
-            <label class="f">Email address <span class="req">*</span><input type="email" id="fEmail" placeholder="you@example.com" autocomplete="email"></label>
-            <label class="f">Password <span class="req">*</span><input type="password" id="fPass" placeholder="Your account password" autocomplete="current-password"></label>
+          <input type="hidden" id="fEmail">
+          <input type="hidden" id="fPass">
+          <div class="start-box">
+            <div class="start-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6"/><path d="M9 13h6M9 17h6"/></svg></div>
+            <h3>Start Your Application</h3>
+            <button type="button" class="btn btn-green btn-start" id="startAppBtn">Click to Start Application →</button>
           </div>
         </div>
 
@@ -208,10 +240,14 @@
           <div class="fgrid">
             <label class="f">Full name <span class="req">*</span><input type="text" id="fName" placeholder="e.g. Adaeze Chiamaka Okafor"></label>
             <label class="f">Date of birth <span class="req">*</span><input type="date" id="fDob"></label>
-            <label class="f">State of origin <span class="req">*</span>
-              <select id="fState"><option value="">Select state…</option></select>
-            </label>
-            <label class="f">Local Government Area <span class="req">*</span><input type="text" id="fLga" placeholder="e.g. Uyo, Enugu East, Ikeja"></label>
+            <div class="f-field">State of origin <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="state" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-state">Select state…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fState">
+            </div>
+            <div class="f-field">Local Government Area <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="lga" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-lga">Select LGA…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fLga">
+            </div>
           </div>
         </div>
 
@@ -219,16 +255,22 @@
         <div class="fstep" data-step="3">
           <h3>Institution &amp; course</h3>
           <div class="fgrid">
-            <label class="f">Institution type <span class="req">*</span>
-              <select id="fType"><option value="">Select…</option><option>University</option><option>Polytechnic</option><option>College of Education</option></select>
-            </label>
-            <label class="f">Level <span class="req">*</span>
-              <select id="fLevel"><option value="">Select…</option><option>ND 1</option><option>ND 2</option><option>HND 1</option><option>HND 2</option><option>100 Level</option><option>200 Level</option><option>300 Level</option><option>400 Level</option><option>500 Level</option><option>600 Level</option></select>
-            </label>
-            <label class="f" style="grid-column:1/-1">Institution name <span class="req">*</span>
-              <select id="fSchool"><option value="">Select institution…</option></select>
-            </label>
-            <label class="f" style="grid-column:1/-1">Department <span class="req">*</span><input type="text" id="fDept" placeholder="e.g. Computer Science, Mass Communication, Accountancy"></label>
+            <div class="f-field">Institution type <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="type" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-type">Select…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fType">
+            </div>
+            <div class="f-field">Level <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="level" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-level">Select…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fLevel">
+            </div>
+            <div class="f-field" style="grid-column:1/-1">Institution name <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="school" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-school">Select institution…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fSchool">
+            </div>
+            <div class="f-field" style="grid-column:1/-1">Department <span class="req">*</span>
+              <button type="button" class="picker-btn" data-picker="dept" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-dept">Select department…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fDept">
+            </div>
           </div>
         </div>
 
@@ -278,7 +320,7 @@
 
           <div class="ps-card">
             <div class="ps-card-head">
-              <span class="ps-logo"><span class="ps-logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>paystack</span>
+              <span class="ps-logo">FGSG <span class="ps-logo-sub">Verification Fee</span></span>
               <span class="ps-test">Test mode · Demo</span>
             </div>
             <div class="ps-card-body">
@@ -291,9 +333,13 @@
                 <span class="ps-channel">USSD</span>
                 <span class="ps-channel">Bank Account</span>
               </div>
-              <div style="margin-top:16px"><button type="button" class="btn btn-paystack" id="feeBtn">Pay ₦3,000 with Paystack</button></div>
+              <div style="margin-top:16px"><button type="button" class="btn btn-paystack" id="feeBtn">Pay ₦3,000</button></div>
               <p class="ps-secure">Secured by Paystack</p>
               <p class="live-status" id="feeStatus" style="margin-top:8px"></p>
+              <div class="pending-banner" id="feePending" style="display:none">
+                <span class="pending-mini" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span>
+                <div><b>Pending — Waiting for Approval</b><span>Payment received</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -306,17 +352,21 @@
             <label class="pay-opt"><input type="radio" name="pay" value="Bank Account"><b>Bank Account</b></label>
           </div>
           <div class="fgrid" id="bankFields" style="display:none;margin-top:20px">
-            <label class="f">Bank name<input type="text" id="fBank" placeholder="e.g. GTBank, Access, FirstBank"></label>
+            <div class="f-field">Bank name
+              <button type="button" class="picker-btn" data-picker="bank" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-bank">Select bank…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+              <input type="hidden" id="fBank">
+            </div>
             <label class="f">Account number<input type="text" id="fAcct" inputmode="numeric" maxlength="10" placeholder="10 digits"></label>
             <label class="f" style="grid-column:1/-1">Account name<input type="text" id="fAcctName" placeholder="Name on the account"></label>
           </div>
         </div>
 
-        <!-- SUCCESS -->
+        <!-- PENDING — after submission -->
         <div class="fstep" data-step="7">
-          <div class="success-box">
-            <div class="tick">✓</div>
-            <h3>Application Filed — Demo</h3>
+          <div class="success-box pending-box">
+            <div class="pending-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
+            <span class="pending-badge">Pending</span>
+            <h3>Waiting for Approval</h3>
             <p class="hint" id="successSummary" style="max-width:52ch;margin:8px auto 0">Application filed.</p>
             <div class="refcode" id="refCode">FGSG-DEMO-2026-0000</div>
             <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
@@ -386,50 +436,27 @@
   </div>
 </footer>
 
-<!-- PAYSTACK TEST CHECKOUT -->
-<div class="ps-overlay" id="psOverlay" role="dialog" aria-modal="true" aria-label="Paystack test checkout">
-  <div class="ps-modal">
-    <div class="ps-modal-head">
-      <div><span class="ps-logo" style="font-size:19px"><span class="ps-logo-mark" aria-hidden="true"><i></i><i></i><i></i></span>paystack</span><b style="margin-top:8px">FGSG Verification Fee</b><span id="psModalEmail">demo@fgsg.demo</span></div>
-      <div class="amt2">₦3,000</div>
+<!-- APP PICKER SHEET — one searchable picker for every dropdown -->
+<div class="sheet-overlay" id="pickerOverlay">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pickerTitle">
+    <div class="sheet-head">
+      <div class="sheet-head-text"><b id="pickerTitle">Select</b><span id="pickerCount"></span></div>
+      <button type="button" class="sheet-close" id="pickerClose" aria-label="Close">✕</button>
     </div>
-    <div class="ps-modal-body">
-      <div class="ps-row" style="padding-top:0"><span>Reference</span><b id="psModalRef">FGSG-PS-2026-0000</b></div>
-      <div class="ps-tabs" role="tablist" aria-label="Paystack channel">
-        <button type="button" class="ps-tab on" data-ps-tab="transfer">Transfer</button>
-        <button type="button" class="ps-tab" data-ps-tab="card">Card</button>
-        <button type="button" class="ps-tab" data-ps-tab="ussd">USSD</button>
-      </div>
-      <div class="ps-panel" data-ps-panel="card">
-        <div class="ps-field"><small>Test card number</small><b>4084 0840 8408 4081</b></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="ps-field"><small>Expiry</small><b>12 / 30</b></div>
-          <div class="ps-field"><small>CVV</small><b>408</b></div>
-        </div>
-      </div>
-      <div class="ps-panel on" data-ps-panel="transfer">
-        <div class="ps-field"><small>Bank</small><b>Wema Bank — Paystack-Titan</b></div>
-        <div class="ps-field"><small>Account number</small><b id="psTransferAcct">0123456789</b></div>
-        <div class="ps-field"><small>Expires</small><b>30 minutes</b></div>
-      </div>
-      <div class="ps-panel" data-ps-panel="ussd">
-        <div class="ps-field"><small>USSD code</small><b>*737*0000#</b></div>
-      </div>
-      <p class="live-status" id="psModalStatus"></p>
-      <div class="ps-modal-actions">
-        <button type="button" class="btn btn-ps-pay" id="psPayBtn">Complete Test Payment — ₦3,000</button>
-        <button type="button" class="btn btn-ps-cancel" id="psCloseBtn">Cancel Payment</button>
-      </div>
-      <p class="ps-secure">Secured by Paystack · Test mode — ₦0 charged in this demo</p>
+    <div class="sheet-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.8-3.8"/></svg>
+      <input type="text" id="pickerSearch" placeholder="Search…" autocomplete="off">
     </div>
+    <div class="sheet-list" id="pickerList" role="listbox" aria-label="Options"></div>
+    <div class="sheet-foot" id="pickerFoot" style="display:none"><button type="button" class="btn btn-green" id="pickerCustomBtn"></button></div>
   </div>
 </div>
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/auth.js"></script>
-<script src="assets/app.js"></script>
-<script src="assets/liveness.js"></script>
-<script src="assets/payment.js"></script>
+<script src="assets/auth.js?v=15"></script>
+<script src="assets/app.js?v=15"></script>
+<script src="assets/liveness.js?v=15"></script>
+<script src="assets/payment.js?v=15"></script>
 </body>
 </html>

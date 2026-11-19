@@ -324,4 +324,33 @@ function authDeleteAccount(){
     toast('Account deleted');
   }
 }
+/* ---------- password peek: eye toggle on every password field ---------- */
+var PEEK_EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+var PEEK_EYE_OFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A9.8 9.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 3.9"/><path d="M6.6 6.9A16.9 16.9 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 4.4-1.2"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
+function initPasswordPeeks(){
+  document.querySelectorAll('input[type="password"]').forEach(function(inp){
+    if(inp.dataset.peek) return;
+    inp.dataset.peek='1';
+    var wrap=document.createElement('span');
+    wrap.className='pw-wrap';
+    inp.parentNode.insertBefore(wrap, inp);
+    wrap.appendChild(inp);
+    var btn=document.createElement('button');
+    btn.type='button';
+    btn.className='pw-peek';
+    btn.setAttribute('aria-label','Show password');
+    btn.innerHTML=PEEK_EYE;
+    btn.addEventListener('click',function(){
+      var show=inp.type==='password';
+      inp.type=show?'text':'password';
+      btn.classList.toggle('on',show);
+      btn.setAttribute('aria-label',show?'Hide password':'Show password');
+      btn.innerHTML=show?PEEK_EYE_OFF:PEEK_EYE;
+      try{ inp.focus(); }catch(e){}
+    });
+    wrap.appendChild(btn);
+  });
+}
+initPasswordPeeks();
+
 window.addEventListener('load', function(){ updateAuthUI(); });
