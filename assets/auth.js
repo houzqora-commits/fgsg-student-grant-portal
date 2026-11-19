@@ -1,5 +1,5 @@
 /* ============================================================
-   FGSG demo — browser-built-in auth database
+   FGSG — browser-built-in auth database
    Accounts live ONLY in this browser (localStorage). There is
    no server and no email is sent. Passwords are never stored
    in plain text: each account stores a random salt plus a
@@ -221,7 +221,7 @@ function updateAuthUI(){
     loginLink.onclick=function(){ if(user){ goPage('app'); } else { goPage('auth','login'); } return false; };
   }
   if(applyLink){
-    applyLink.textContent=user?'Open Dashboard →':'Apply — Demo';
+    applyLink.textContent=user?'Open Dashboard →':'Apply';
     applyLink.onclick=function(){ if(user){ goPage('app'); } else { goPage('auth','signup'); } return false; };
   }
   var box=document.getElementById('accountBox');

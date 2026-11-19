@@ -1,5 +1,5 @@
 /* ============================================================
-   FGSG demo — liveness check
+   FGSG — liveness check
    Real on-device face scan using MediaPipe Face Mesh.
    Step 4 shows only the "Face Scan / Liveness Check" button;
    tapping it opens a full-screen popup with the camera, and

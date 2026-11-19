@@ -1,6 +1,6 @@
 /* ============================================================
-   FGSG demo — Paystack verification fee & payout
-   Step 5 is ONLY the real Paystack popup (test mode). There is
+   FGSG — Paystack verification fee & payout
+   Step 5 is ONLY the real Paystack popup. There is
    no FGSG checkout sheet and no fallback checkout anywhere: if
    the Paystack script cannot load, Step 5 shows an error and
    the Pay button becomes a retry. After payment, the status is
@@ -10,14 +10,13 @@
 
 /* ---------- Verification fee payment (Step 5) ----------
    The Pay button opens the REAL Paystack popup (PaystackPop from
-   js.paystack.co, loaded on tap so pages stay fast) with the test
+   js.paystack.co, loaded on tap so pages stay fast) with the
    public key below, amount 300000 kobo (₦3,000), currency NGN and
    an FGSG-PS reference. Channels: Card, Bank Transfer, USSD and
    Bank Account — Bank Transfer is the featured channel on the
    card and generates a Paystack-Titan account number that expires
-   after 30 minutes. Test mode only: pay with the Paystack test
-   card, no real money moves, and the same reference appears in the
-   Paystack dashboard (Test Mode) after payment. */
+   after 30 minutes. The same reference appears in the Paystack
+   dashboard after payment. */
 var PAYSTACK_PUBLIC_KEY='pk_test_e9e8232812380633f7d91f6f7db571fa0296ae72';
 var PAYSTACK_SRC='https://js.paystack.co/v1/inline.js';
 var paystackRef='';
@@ -28,7 +27,7 @@ function makePaystackRef(){
 }
 function paystackEmail(){
   var e=val('fEmail');
-  return (e && e.indexOf('@')>=0) ? e : 'demo@fgsg.demo';
+  return (e && e.indexOf('@')>=0) ? e : 'you@example.com';
 }
 function setFeeStatus(msg,ok){
   var st=document.getElementById('feeStatus');
@@ -72,7 +71,7 @@ function openPaystackPopup(){
         currency:'NGN',
         ref:ref,
         channels:['card','bank_transfer','ussd','bank'],
-        metadata:{custom_fields:[{display_name:'Purpose',variable_name:'purpose',value:'FGSG verification fee — competition demo'}]},
+        metadata:{custom_fields:[{display_name:'Purpose',variable_name:'purpose',value:'FGSG verification fee'}]},
         callback:function(response){
           paid=true;
           completePaystackPayment(response.reference||ref);
@@ -103,11 +102,11 @@ document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.addEventLi
 function renderProfile(){
   var name=val('fName'), school=val('fSchool');
   var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
-  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Demo Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
+  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
 }
-function submitDemo(){
+function submitApplication(){
   step=7; renderStep();
-  var ref='FGSG-DEMO-2026-'+Math.floor(1000+Math.random()*9000);
+  var ref='FGSG-2026-'+Math.floor(1000+Math.random()*9000);
   document.getElementById('refCode').textContent=ref;
   var pay=document.querySelector('input[name="pay"]:checked').value;
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';

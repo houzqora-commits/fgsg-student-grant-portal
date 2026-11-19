@@ -1,5 +1,5 @@
 /* ============================================================
-   FGSG — Federal Government Student Grant (Competition Demo)
+   FGSG — Federal Government Student Grant
    Stylesheet — all page styles live here, separate from markup.
    Palette: black & white with Nigerian green outlines.
    ============================================================ */
@@ -30,10 +30,6 @@ a{color:inherit}
 :focus-visible{outline:3px solid var(--lime);outline-offset:2px;border-radius:6px}
 /* anchored sections clear the sticky header instead of hiding under it */
 section[id],.hero[id]{scroll-margin-top:96px}
-
-/* ---------- DEMO BANNER ---------- */
-.demo-banner{background:var(--lime);color:#0a1206;text-align:center;font-weight:800;font-size:12.5px;letter-spacing:.06em;text-transform:uppercase;padding:10px 16px;line-height:1.45}
-.demo-banner span{font-weight:600;text-transform:none;letter-spacing:0}
 
 /* ---------- HEADER ---------- */
 header.site{position:sticky;top:0;z-index:55;background:rgba(7,8,7,.94);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
@@ -189,7 +185,6 @@ label.f span.req{color:var(--green)}
 label.f small{display:block;font-weight:500;color:#667066;margin-top:3px}
 input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{width:100%;margin-top:var(--s2);padding:12px 14px;border:1.5px solid #9aa79a;border-radius:12px;font:inherit;font-size:15.5px;background:#fff;color:#0b0d0b;min-height:48px}
 input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,135,81,.35);border-color:var(--green)}
-.demo-note{background:#eef7ee;border:1px dashed var(--green);border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.55;color:#274435;margin-top:14px}
 .upload{border:2px dashed #7d8a7d;border-radius:14px;padding:22px var(--s4);text-align:center;background:#fafbfa}
 .upload b{display:block;font-size:15px;margin-bottom:var(--s2)}
 .upload p{color:#667066;font-size:13.5px;margin-bottom:10px}
@@ -264,7 +259,6 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,135,81,.35);bor
 .ps-card-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);background:#0b0f0b;color:#fff;padding:var(--s4) var(--s5);flex-wrap:wrap}
 .ps-logo{display:flex;align-items:baseline;gap:10px;font-family:"Archivo";font-weight:900;font-size:21px;letter-spacing:-.02em}
 .ps-logo-sub{font-size:13px;font-weight:700;color:var(--lime-soft);letter-spacing:.06em;text-transform:uppercase}
-.ps-test{border:1.5px solid var(--lime);color:var(--lime-soft);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
 .ps-card-body{padding:var(--s5) var(--s6) var(--s6)}
 .ps-row{display:flex;justify-content:space-between;gap:var(--s4);padding:11px 0;border-bottom:1px solid #e3e8e3;font-size:14.5px}
 .ps-row span{color:#667066;font-weight:600}.ps-row b{font-weight:800;text-align:right;word-break:break-all}

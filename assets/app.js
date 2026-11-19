@@ -1,5 +1,5 @@
 /* ============================================================
-   FGSG demo — core app logic
+   FGSG — core app logic
    Data lists, page routing (landing / auth / app), auth tabs,
    dock navigation, multi-step application form and uploads.
    Loaded first; liveness.js and payment.js build on this.
@@ -222,9 +222,9 @@ function renderStep(){
     document.getElementById('pbar').style.width=pct+'%';
   }
   document.getElementById('backBtn').style.visibility= step===1||step===7 ? 'hidden':'visible';
-  document.getElementById('nextBtn').textContent= step===6 ? 'Submit Demo Application ✓' : 'Continue →';
+  document.getElementById('nextBtn').textContent= step===6 ? 'Submit Application ✓' : 'Continue →';
   document.getElementById('formNav').style.display= step===1||step===7 ? 'none':'flex';
-  if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'demo@fgsg.demo'); }
+  if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
 }
 function val(id){return document.getElementById(id).value.trim();}
 /* Step 1 is checked against the browser account store: the
@@ -278,7 +278,7 @@ if(startAppBtn){ startAppBtn.addEventListener('click',function(){
 });}
 document.getElementById('nextBtn').addEventListener('click',function(){
   if(step<6){ if(!validateStep())return; step++; renderStep(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
-  else if(step===6){ submitDemo(); }
+  else if(step===6){ submitApplication(); }
 });
 document.getElementById('backBtn').addEventListener('click',function(){ if(step>1){step--;renderStep();} });
 
