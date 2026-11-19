@@ -221,8 +221,13 @@ function updateAuthUI(){
     loginLink.onclick=function(){ if(user){ goPage('app'); } else { goPage('auth','login'); } return false; };
   }
   if(applyLink){
-    applyLink.textContent=user?'Open Dashboard →':'Apply';
-    applyLink.onclick=function(){ if(user){ goPage('app'); } else { goPage('auth','signup'); } return false; };
+    if(user){
+      applyLink.style.display='none';
+    } else {
+      applyLink.style.display='';
+      applyLink.textContent='Apply Now';
+      applyLink.onclick=function(){ goPage('auth','signup'); return false; };
+    }
   }
   var box=document.getElementById('accountBox');
   if(box){

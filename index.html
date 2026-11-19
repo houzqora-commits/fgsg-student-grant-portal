@@ -13,7 +13,7 @@
 /* Always show the newest build on reload: drop any service worker
    or Cache Storage left by an older version, clear saved UI state
    (never the accounts), and never restore a stale page from
-   the back/forward cache. Asset URLs below carry ?v=17 so a reload
+   the back/forward cache. Asset URLs below carry ?v=18 so a reload
    fetches fresh CSS/JS instead of a cached copy. */
 (function(){
   if('serviceWorker' in navigator){
@@ -38,7 +38,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=17">
+<link rel="stylesheet" href="assets/styles.css?v=18">
 </head>
 <body>
 
@@ -53,7 +53,7 @@
       <a href="#faqs" onclick="goLandingAnchor(event,'faqs')">FAQs</a>
       <a href="#help" onclick="goLandingAnchor(event,'help')">Help Desk</a>
       <a href="#auth" id="navLoginLink" onclick="goPage('auth','login');return false;">Log in</a>
-      <a class="btn btn-lime" id="navApplyLink" href="#auth" onclick="goPage('auth','signup');return false;">Apply</a>
+      <a class="btn btn-lime" id="navApplyLink" href="#auth" onclick="goPage('auth','signup');return false;">Apply Now</a>
     </nav>
   </div>
 </header>
@@ -464,9 +464,9 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/auth.js?v=17"></script>
-<script src="assets/app.js?v=17"></script>
-<script src="assets/liveness.js?v=17"></script>
-<script src="assets/payment.js?v=17"></script>
+<script src="assets/auth.js?v=18"></script>
+<script src="assets/app.js?v=18"></script>
+<script src="assets/liveness.js?v=18"></script>
+<script src="assets/payment.js?v=18"></script>
 </body>
 </html>
