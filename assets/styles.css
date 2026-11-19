@@ -124,15 +124,22 @@ section.block{max-width:var(--wrap);margin:0 auto;padding:var(--section-y) var(-
 .auth-card{background:#fff;color:#0b0d0b;border-radius:16px;border:2.5px solid var(--green);box-shadow:6px 6px 0 rgba(0,135,81,.9);padding:var(--s6)}
 @media(max-width:560px){.auth-card{padding:var(--s5)}}
 .auth-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s2);margin-bottom:var(--s6)}
-.auth-tab{border:1.5px solid #9aa79a;background:#fff;border-radius:12px;padding:11px 4px;font-weight:800;font-size:13.5px;min-height:48px;transition:transform .08s ease}
+/* explicit dark text on every tab — without it the label inherits the
+   page's white body text and washes out on the white card */
+.auth-tab{border:2px solid #5f6f5f;background:#eef0ee;color:#0b0d0b;border-radius:12px;padding:12px 8px;font-weight:800;font-size:14.5px;line-height:1.25;min-height:52px;display:flex;align-items:center;justify-content:center;text-align:center;transition:transform .08s ease}
+.auth-tab:hover{border-color:var(--green);background:#e2eee2}
 .auth-tab:active{transform:scale(.97)}
-.auth-tab.on{border-color:var(--green);background:#eef7ee;box-shadow:3px 3px 0 var(--green);color:#0b0d0b}
+.auth-tab.on{border-color:#00693e;background:#00693e;box-shadow:3px 3px 0 rgba(0,105,62,.35);color:#fff}
 .auth-panel{display:none}
 .auth-panel.on{display:block}
 .auth-panel h3{font-size:20px;margin-bottom:var(--s4);text-align:center}
 .auth-panel label.f{margin-bottom:var(--s4)}
 .auth-panel label.f:last-of-type{margin-bottom:var(--s5)}
 .auth-panel .btn{width:100%}
+/* darker green behind the white label so Log in / Create Account /
+   Reset Password clear contrast instead of sitting on mid-green */
+.auth-panel .btn-green{background:#00693e;border-color:#00693e;color:#fff;font-size:15.5px;min-height:50px}
+.auth-panel .btn-green:hover{background:#00572f;border-color:#00572f}
 .auth-ok{display:none;background:#eef7ee;border:1px dashed var(--green);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;color:#274435;margin-top:14px}
 .auth-msg{display:none;border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;margin-top:12px;font-weight:600}
 .auth-msg.show{display:block}
@@ -163,9 +170,9 @@ section.block{max-width:var(--wrap);margin:0 auto;padding:var(--section-y) var(-
 .card-w h3{font-size:18px;line-height:1.25;margin-bottom:var(--s3)}
 .card-w p{color:#4c554c;line-height:1.6;font-size:15px}
 .checklist{list-style:none;margin:var(--s4) 0 0;padding:0;display:grid;gap:var(--s3)}
-.checklist li{display:flex;gap:var(--s2);align-items:flex-start;font-size:14px;line-height:1.5;font-weight:600}
-.checklist li::before{content:"✓";flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:900;margin-top:1px}
-.checklist li.opt::before{content:"–";background:#fff;color:#0b0d0b;border:1.5px solid #0b0d0b}
+.checklist li{display:flex;gap:var(--s3);align-items:flex-start;font-size:14px;line-height:1.5;font-weight:600}
+.checklist li::before{content:"";flex:0 0 8px;width:8px;height:8px;border-radius:50%;background:#0b0d0b;opacity:.55;margin-top:7px}
+.checklist li.opt::before{content:"";background:#0b0d0b}
 
 /* progress */
 .progress-head{display:flex;justify-content:space-between;align-items:center;gap:var(--s3);flex-wrap:wrap;margin-bottom:var(--s3)}
@@ -410,7 +417,7 @@ footer b{color:#fff}
 .wallet{align-items:center;text-align:center}
 .pillrow{justify-content:center;margin-top:var(--s4)}
 .checklist{max-width:380px;margin-left:auto;margin-right:auto;text-align:left}
-.checklist li::before{flex-basis:20px;width:20px;height:20px;font-size:11px}
+.checklist li::before{flex-basis:8px;width:8px;height:8px}
 .progress-head{max-width:680px;margin-left:auto;margin-right:auto}
 #view-me .card-w,#view-bank .card-w{margin:0 auto}
 #view-me .card-w>div:last-child{justify-content:center}
