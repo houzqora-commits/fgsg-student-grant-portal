@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css?v=46">
-<link rel="stylesheet" href="assets/admin.css?v=7">
+<link rel="stylesheet" href="assets/admin.css?v=8">
 <link rel="stylesheet" href="assets/dock.css?v=2">
 </head>
 <body>
@@ -533,14 +533,13 @@
 
 <!-- ADMIN PAGE — #/admin ONLY (fgsg.site/#/admin). No link,
      button, menu entry or /admin route leads here.
-     Its own login screen, separate from the student login,
-     with BOTH gates, every time: first Username Admin with
-     the generated admin password (checked against its
-     SHA-256 hash in admin.js — the password itself is never
-     in the code), then the Supabase admin account login.
-     Neither gate alone opens the dashboard. Login state is
-     in-memory only. Student header and footer are hidden
-     while this page is open (body.in-admin). -->
+     Its own login screen, separate from the student login:
+     Username Admin with the generated admin password
+     (checked against its SHA-256 hash in admin.js — the
+     password itself is never in the code). That login alone
+     opens the dashboard. Login state is in-memory only.
+     Student header and footer are hidden while this page
+     is open (body.in-admin). -->
 <div class="page" id="page-admin">
   <div class="admin-wrap">
 
@@ -553,11 +552,6 @@
           <label class="f">Password <span class="req">*</span><input type="password" id="adminPass" placeholder="Admin password" autocomplete="current-password"></label>
           <button type="button" class="btn btn-green" id="adminLoginBtn">Log in to Admin →</button>
           <div class="auth-msg" id="adminMsg" role="alert"></div>
-          <div class="admin-or"><span>Supabase admin account</span></div>
-          <label class="f">Admin email <span class="req">*</span><input type="email" id="adminSbEmail" placeholder="admin@example.com" autocomplete="email"></label>
-          <label class="f">Admin account password <span class="req">*</span><input type="password" id="adminSbPass" placeholder="Supabase account password" autocomplete="current-password"></label>
-          <button type="button" class="btn btn-green" id="adminSbBtn">Log in with Supabase →</button>
-          <div class="auth-msg" id="adminSbMsg" role="alert"></div>
         </div>
         <a class="admin-back" href="#top" id="adminBackHome">← Back to home</a>
       </div>
@@ -734,7 +728,7 @@
 <script src="assets/liveness.js?v=20"></script>
 <script src="assets/payment.js?v=27"></script>
 <script src="assets/reviews.js?v=3"></script>
-<script src="assets/admin.js?v=8"></script>
+<script src="assets/admin.js?v=9"></script>
 <script src="assets/dock.js?v=2"></script>
 </body>
 </html>
