@@ -358,16 +358,14 @@ function renderStep(){
   document.getElementById('backBtn').style.visibility= step===1||step===8 ? 'hidden':'visible';
   document.getElementById('nextBtn').textContent= step===7 ? 'Submit Application ✓' : 'Continue →';
   document.getElementById('formNav').style.display= step===1||step===8 ? 'none':'flex';
-  /* Cancel & Restart: available on ANY step while the application
-     is still being filled in (Steps 2–6, and Step 1 if a draft is
-     already in progress). It locks ONLY after Submit — Step 7 /
-     a submitted application can never be cancelled or restarted. */
+  /* Cancel & Restart: hidden until the application has actually
+     started. It shows ONLY inside the steps (Steps 2–7), after
+     the user has tapped Click to Start Application — never on
+     the Step 1 start screen, even when a saved draft exists —
+     and never after submission (Step 8 / a submitted application
+     is locked and can never be cancelled or restarted). */
   var lockedRb=(typeof isSubmitted==='function'&&isSubmitted())||step===8;
-  var hasProgressRb=step>1;
-  if(!hasProgressRb){
-    try{ hasProgressRb=typeof draftHasProgress==='function' && draftHasProgress(collectDraft()); }catch(e){}
-  }
-  var showRestart=!lockedRb && hasProgressRb;
+  var showRestart=!lockedRb && step>=2 && step<=7;
   var rb=document.getElementById('restartAppBtn');
   if(rb){ rb.style.display= showRestart ? 'inline-flex':'none'; }
   if(step===7){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
@@ -981,7 +979,8 @@ function setRestartArmed(armed){
 function restartApplication(){
   /* Locked ONLY after submission: a submitted application cannot
      be restarted, cancelled or replaced. Before submission — on
-     any step — Cancel & Restart clears the draft and starts over. */
+     any in-progress step (Steps 2–7) — Cancel & Restart clears
+     the draft and starts over. */
   if(isSubmitted()||step===8){ toast('Application already submitted — it cannot be cancelled or restarted'); return; }
   if(!restartArmed){ setRestartArmed(true); return; }
   setRestartArmed(false);

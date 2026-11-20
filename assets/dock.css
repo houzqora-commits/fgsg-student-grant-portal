@@ -1,35 +1,39 @@
 /* ============================================================
    FGSG — portal dock (reference design, exact)
-   Dark charcoal pill, fully rounded, floating at the bottom.
+   Dark charcoal pill, fully rounded, locked to the bottom.
    The active tab's icon sits in a dark circular bubble that
    straddles the top edge of the pill, with a smooth concave
    notch carved into the pill around the bubble (a circular
    mask on the pill's background layer, concentric with the
    bubble, so a small even gap rings the bubble's lower half).
-   Active icon and label are blue; inactive icons and labels
-   are light grey. The bubble and the notch glide together to
-   whichever tab is tapped (dock.js drives both from the same
-   animated x, so they never separate).
+   Active icon and label are the site green (#00a35c, deepening
+   to #00713f on press); inactive icons and labels are light
+   grey. The bubble and the notch glide together to whichever
+   tab is tapped (dock.js drives both from the same animated
+   x, so they never separate).
 
    This bar is ONE element at body level, outside every page.
-   It is never rebuilt: page and view switches only toggle its
-   visibility and move the bubble, so it cannot blink.
+   It is locked to the bottom: position fixed, centred with
+   auto margins, and the bar itself has NO entrance animation,
+   NO transition and NO transform — it never slides, repaints
+   or repositions when pages or views switch. Only the bubble
+   inside it moves. Switching pages or views never rebuilds it.
    ============================================================ */
 
 #fgsgDock{
   position:fixed;
-  left:50%;
+  left:0;
+  right:0;
   bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-  transform:translateX(-50%);
   width:min(620px, calc(100vw - 20px));
+  margin:0 auto;
   z-index:75;
   display:none;
+  animation:none;
+  transition:none;
+  transform:none;
 }
-#fgsgDock.on{
-  display:block;
-  animation:dockIn .24s cubic-bezier(.25,.7,.3,1);
-}
-@keyframes dockIn{from{opacity:0;transform:translateX(-50%) translateY(14px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+#fgsgDock.on{display:block}
 
 .dock-pill{
   position:relative;
@@ -46,8 +50,8 @@
   box-shadow:0 14px 34px rgba(5,10,6,.38), 0 3px 10px rgba(5,10,6,.22);
 }
 
-/* raised bubble — darker than the pill, thin ring, soft shadow.
-   Its centre sits exactly on the pill's top edge. */
+/* raised bubble — darker than the pill, thin green ring, soft
+   shadow. Its centre sits exactly on the pill's top edge. */
 .dock-bubble{
   position:absolute;
   top:0;
@@ -56,15 +60,15 @@
   height:56px;
   border-radius:50%;
   background:#131418;
-  border:1px solid rgba(255,255,255,.07);
-  box-shadow:0 8px 18px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.05);
+  border:1px solid rgba(0,163,92,.4);
+  box-shadow:0 8px 18px rgba(0,0,0,.38), 0 4px 14px rgba(0,163,92,.22), inset 0 1px 0 rgba(255,255,255,.05);
   display:grid;
   place-items:center;
   z-index:2;
   will-change:transform;
   pointer-events:none;
 }
-.dock-bubble span{display:grid;place-items:center;color:#4e8cff}
+.dock-bubble span{display:grid;place-items:center;color:#00a35c;transition:color .18s ease}
 .dock-bubble svg{width:27px;height:27px;display:block}
 
 .dock-tabs{
@@ -102,9 +106,12 @@
   white-space:nowrap;
 }
 /* active tab: its own in-pill icon gives way to the bubble,
-   and its label turns the same blue as the bubble icon */
+   and its label turns the same site green as the bubble icon.
+   Pressing the active tab deepens both to the pressed green. */
 .dock-tab.on .dock-ic{opacity:0}
-.dock-tab.on .dock-label{color:#4e8cff}
+.dock-tab.on .dock-label{color:#00a35c}
+.dock-tab.on:active .dock-label{color:#00713f}
+.dock-pill:has(.dock-tab.on:active) .dock-bubble span{color:#00713f}
 
 /* room at the bottom of the portal so the floating bar never
    covers the last card, and the toast clears the bar */
@@ -116,6 +123,6 @@ body.dock-on footer{padding-bottom:118px}
   .dock-tab .dock-ic svg{width:23px;height:23px}
 }
 @media(prefers-reduced-motion:reduce){
-  #fgsgDock.on{animation:none}
   .dock-tab{transition:none}
+  .dock-bubble span{transition:none}
 }

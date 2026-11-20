@@ -37,9 +37,9 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=45">
+<link rel="stylesheet" href="assets/styles.css?v=46">
 <link rel="stylesheet" href="assets/admin.css?v=7">
-<link rel="stylesheet" href="assets/dock.css?v=1">
+<link rel="stylesheet" href="assets/dock.css?v=2">
 </head>
 <body>
 
@@ -618,11 +618,14 @@
 </footer>
 
 <!-- PORTAL DOCK — single universal nav bar, at body level outside
-     every page, fixed to the bottom, shown only inside the portal
-     (page-app). It is built once and never rebuilt: switching
-     pages or views only moves its bubble (dock.js), so it cannot
-     blink. Dark charcoal pill from the reference design, with the
-     raised dark bubble and concave notch on the active tab. -->
+     every page, locked to the bottom with position fixed and no
+     animation, transition or transform on the bar itself, shown
+     only inside the portal (page-app). It is built once and
+     never rebuilt: switching pages or views only moves its
+     bubble (dock.js), so it cannot blink or shift. Dark charcoal
+     pill from the reference design, with the raised dark bubble
+     and concave notch on the active tab; the active icon and
+     label are the site green. -->
 <nav id="fgsgDock" aria-label="Portal">
   <div class="dock-pill" id="dockPill">
     <div class="dock-bg" id="dockBg"></div>
@@ -727,11 +730,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="assets/supabase-client.js?v=6"></script>
 <script src="assets/auth.js?v=23"></script>
-<script src="assets/app.js?v=41"></script>
+<script src="assets/app.js?v=42"></script>
 <script src="assets/liveness.js?v=20"></script>
 <script src="assets/payment.js?v=27"></script>
 <script src="assets/reviews.js?v=3"></script>
 <script src="assets/admin.js?v=8"></script>
-<script src="assets/dock.js?v=1"></script>
+<script src="assets/dock.js?v=2"></script>
 </body>
 </html>
