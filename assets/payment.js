@@ -119,9 +119,8 @@ function renderProfile(){
       Academic / Background fields (matric, CGPA, parents'
       status, phone, no-other-scholarship confirmation) onto
       that same applications row; 2) every uploaded file — JAMB
-      letter, fees receipt, statement of result, HOD
-      student ID card, certificate of origin,
-      birth certificate and passport photograph — to the
+      letter, fees receipt, statement of result,
+      certificate of origin and birth certificate — to the
       student-documents bucket plus their documents rows.
    The Pending UI below never waits on this; failures are
    logged by fgsgSync and the local flow is unchanged. */
@@ -144,10 +143,8 @@ function syncApplicationToSupabase(ref){
     {file:fileOf('upFees'), kind:'fees_receipt'},
     {file:fileOf('upNin'), kind:'nin_card'},
     {file:fileOf('upResult'), kind:'semester_result'},
-    {file:fileOf('upStudentId'), kind:'student_id_card'},
     {file:fileOf('upOrigin'), kind:'certificate_of_origin'},
-    {file:fileOf('upBirth'), kind:'birth_certificate'},
-    {file:fileOf('upPassport'), kind:'passport_photo'}
+    {file:fileOf('upBirth'), kind:'birth_certificate'}
   ];
   var chain=fgsgSaveApplication(form, ref).then(function(row){
     var appId=row?row.id:null;

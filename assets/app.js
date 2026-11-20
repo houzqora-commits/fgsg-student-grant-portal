@@ -429,12 +429,10 @@ function validateStep(){
     if(cgpa>5){toast('CGPA cannot be more than 5.00');return false;}
     if(cgpa<3.5){toast('CGPA must be at least 3.50 to apply');return false;}
     if(!document.getElementById('upResult').files.length && !draftResultName){toast('Attach your current semester result / statement of result');return false;}
-    if(!document.getElementById('upStudentId').files.length && !draftStudentIdName){toast('Attach your student ID card');return false;}
   }
   if(step===5){
     if(!document.getElementById('upOrigin').files.length && !draftOriginName){toast('Attach your certificate of origin');return false;}
     if(!document.getElementById('upBirth').files.length && !draftBirthName){toast('Attach your birth certificate / age declaration');return false;}
-    if(!document.getElementById('upPassport').files.length && !draftPassportName){toast('Attach your passport photograph');return false;}
     if(!val('fParentsStatus')){toast("Enter your parents' financial status / occupation");return false;}
     var phoneDigits=val('fPhone').replace(/\D/g,'');
     if(phoneDigits.length===13 && phoneDigits.indexOf('234')===0) phoneDigits='0'+phoneDigits.slice(3);
@@ -461,9 +459,9 @@ document.getElementById('backBtn').addEventListener('click',function(){ if(step=
 
 /* uploads — the draft keeps the attached file names, because a page
    cannot refill a file input after a reload */
-var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upNin:'draftNinName',upResult:'draftResultName',upStudentId:'draftStudentIdName',upOrigin:'draftOriginName',upBirth:'draftBirthName',upPassport:'draftPassportName'};
-[['upJamb','okJamb'],['upFees','okFees'],['upNin','okNin'],['upResult','okResult'],['upStudentId','okStudentId'],['upOrigin','okOrigin'],['upBirth','okBirth'],['upPassport','okPassport']].forEach(function(pair){
-  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; var varName=UPLOAD_DRAFT_VARS[pair[0]]; if(varName==='draftJambName') draftJambName=nm; else if(varName==='draftFeesName') draftFeesName=nm; else if(varName==='draftResultName') draftResultName=nm; else if(varName==='draftStudentIdName') draftStudentIdName=nm; else if(varName==='draftOriginName') draftOriginName=nm; else if(varName==='draftBirthName') draftBirthName=nm; else if(varName==='draftPassportName') draftPassportName=nm; else if(varName==='draftNinName') draftNinName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
+var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upNin:'draftNinName',upResult:'draftResultName',upOrigin:'draftOriginName',upBirth:'draftBirthName'};
+[['upJamb','okJamb'],['upFees','okFees'],['upNin','okNin'],['upResult','okResult'],['upOrigin','okOrigin'],['upBirth','okBirth']].forEach(function(pair){
+  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; var varName=UPLOAD_DRAFT_VARS[pair[0]]; if(varName==='draftJambName') draftJambName=nm; else if(varName==='draftFeesName') draftFeesName=nm; else if(varName==='draftResultName') draftResultName=nm; else if(varName==='draftOriginName') draftOriginName=nm; else if(varName==='draftBirthName') draftBirthName=nm; else if(varName==='draftNinName') draftNinName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
 });
 
 /* ---------- application draft: progress saves at every step ----------
@@ -474,7 +472,7 @@ var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upNin:'draf
    details filled in. Restart clears the draft for this account
    and returns the form to Step 1. The submitted application
    itself is saved to Supabase (payment.js / supabase-client.js). */
-var draftJambName='', draftFeesName='', draftNinName='', draftResultName='', draftStudentIdName='', draftOriginName='', draftBirthName='', draftPassportName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
+var draftJambName='', draftFeesName='', draftNinName='', draftResultName='', draftOriginName='', draftBirthName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
 /* Background approval: after submission the application stays
    Pending with no timer shown anywhere. The submission time is
    kept silently in the draft; once the background wait has
@@ -874,12 +872,12 @@ function draftKey(){
   return 'fgsg_draft_v1_'+(e||'guest');
 }
 function draftHasProgress(d){
-  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.liveDone||d.feeDone||d.jambName||d.feesName||d.ninName||d.matric||d.cgpa||d.resultName||d.studentIdName||d.originName||d.birthName||d.passportName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.liveDone||d.feeDone||d.jambName||d.feesName||d.ninName||d.matric||d.cgpa||d.resultName||d.originName||d.birthName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
 }
 function collectDraft(){
   var wBankEl=document.getElementById('fWithdrawBank'), wAcctEl=document.getElementById('wAcct'), wAmtEl=document.getElementById('wAmount');
   var noSchEl=document.getElementById('fNoOtherScholarship');
-  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,studentIdName:draftStudentIdName,originName:draftOriginName,birthName:draftBirthName,passportName:draftPassportName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:'Grant Wallet',liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,ninName:draftNinName,appRef:draftAppRef,submitted:step===8&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
+  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,originName:draftOriginName,birthName:draftBirthName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:'Grant Wallet',liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,ninName:draftNinName,appRef:draftAppRef,submitted:step===8&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
 }
 function saveDraft(){
   try{
@@ -935,13 +933,13 @@ function restoreDraft(){
      saved a payout choice or bank details are ignored. */
   var payVal='Grant Wallet';
   draftJambName=d.jambName||''; draftFeesName=d.feesName||''; draftNinName=d.ninName||'';
-  draftResultName=d.resultName||''; draftStudentIdName=d.studentIdName||'';
-  draftOriginName=d.originName||''; draftBirthName=d.birthName||''; draftPassportName=d.passportName||'';
+  draftResultName=d.resultName||'';
+  draftOriginName=d.originName||''; draftBirthName=d.birthName||'';
   if(draftJambName){ var okJ=document.getElementById('okJamb'); okJ.style.display='block'; okJ.textContent='✓ '+draftJambName+' attached'; }
   if(draftFeesName){ var okF=document.getElementById('okFees'); okF.style.display='block'; okF.textContent='✓ '+draftFeesName+' attached'; }
   if(draftNinName){ var okN=document.getElementById('okNin'); if(okN){ okN.style.display='block'; okN.textContent='✓ '+draftNinName+' attached'; } }
-  [['draftResultName','okResult'],['draftStudentIdName','okStudentId'],['draftOriginName','okOrigin'],['draftBirthName','okBirth'],['draftPassportName','okPassport']].forEach(function(pair){
-    var nm=pair[0]==='draftResultName'?draftResultName:pair[0]==='draftStudentIdName'?draftStudentIdName:pair[0]==='draftOriginName'?draftOriginName:pair[0]==='draftBirthName'?draftBirthName:draftPassportName;
+  [['draftResultName','okResult'],['draftOriginName','okOrigin'],['draftBirthName','okBirth']].forEach(function(pair){
+    var nm=pair[0]==='draftResultName'?draftResultName:pair[0]==='draftOriginName'?draftOriginName:draftBirthName;
     if(nm){ var okEl=document.getElementById(pair[1]); if(okEl){ okEl.style.display='block'; okEl.textContent='✓ '+nm+' attached'; } }
   });
   if(d.liveDone){ liveDone=true; if(typeof liveSetEntry==='function'){ liveSetEntry('✓ Liveness confirmed','ok'); document.getElementById('liveOpenBtn').textContent='Scan Again'; } }
@@ -1004,9 +1002,9 @@ function restartApplication(){
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
   withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; withdrawTotal=0; withdrawHistory=[]; withdrawJustQueued=false; draftFeePaidAt=0; draftFeeRef=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
   Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
-  draftJambName=''; draftFeesName=''; draftNinName=''; draftResultName=''; draftStudentIdName=''; draftOriginName=''; draftBirthName=''; draftPassportName=''; draftAppRef=''; draftSubmittedAt=0;
-  ['upJamb','upFees','upNin','upResult','upStudentId','upOrigin','upBirth','upPassport'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['okJamb','okFees','okNin','okResult','okStudentId','okOrigin','okBirth','okPassport'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  draftJambName=''; draftFeesName=''; draftNinName=''; draftResultName=''; draftOriginName=''; draftBirthName=''; draftAppRef=''; draftSubmittedAt=0;
+  ['upJamb','upFees','upNin','upResult','upOrigin','upBirth'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['okJamb','okFees','okNin','okResult','okOrigin','okBirth'].forEach(function(id){ document.getElementById(id).style.display='none'; });
   liveDone=false; if(typeof liveReset==='function') liveReset();
   feeDone=false;
   var fb=document.getElementById('feeBtn'); fb.disabled=false; fb.textContent='Pay ₦3,000';

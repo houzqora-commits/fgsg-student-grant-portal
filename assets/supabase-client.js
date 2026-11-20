@@ -107,10 +107,10 @@ async function fgsgSaveApplication(form, reference) {
      onto the same applications row with a follow-up update.
      Best-effort by design: if a column is not in the database
      yet the update is skipped and the application save above
-     still stands — the submission flow never breaks. The six
-     new document uploads travel separately as documents rows
-     (semester_result, student_id_card,
-     certificate_of_origin, birth_certificate, passport_photo). */
+     still stands — the submission flow never breaks. The new
+     document uploads travel separately as documents rows
+     (semester_result,
+     certificate_of_origin, birth_certificate). */
   if (row && row.id && (form.fMatric || form.fCgpa !== undefined || form.fPhone || form.fParentsStatus)) {
     try {
       await fgsgDb.from('applications').update({
@@ -320,10 +320,8 @@ var FGSG_REVIEW_ITEMS = [
   {key:'doc_jamb_letter', label:'JAMB Admission Letter', kind:'document', docKind:'jamb_letter', uploadId:'upJamb'},
   {key:'doc_fees_receipt', label:'Last School Fees Receipt', kind:'document', docKind:'fees_receipt', uploadId:'upFees'},
   {key:'doc_semester_result', label:'Statement of Result', kind:'document', docKind:'semester_result', uploadId:'upResult'},
-  {key:'doc_student_id_card', label:'Student ID Card', kind:'document', docKind:'student_id_card', uploadId:'upStudentId'},
   {key:'doc_certificate_of_origin', label:'Certificate of Origin', kind:'document', docKind:'certificate_of_origin', uploadId:'upOrigin'},
-  {key:'doc_birth_certificate', label:'Birth Certificate / Age Declaration', kind:'document', docKind:'birth_certificate', uploadId:'upBirth'},
-  {key:'doc_passport_photo', label:'Passport Photograph', kind:'document', docKind:'passport_photo', uploadId:'upPassport'}
+  {key:'doc_birth_certificate', label:'Birth Certificate / Age Declaration', kind:'document', docKind:'birth_certificate', uploadId:'upBirth'}
 ];
 function fgsgReviewItemByKey(key){
   for (var i = 0; i < FGSG_REVIEW_ITEMS.length; i++) if (FGSG_REVIEW_ITEMS[i].key === key) return FGSG_REVIEW_ITEMS[i];
