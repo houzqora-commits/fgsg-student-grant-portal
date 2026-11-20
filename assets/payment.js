@@ -106,17 +106,23 @@ function renderProfile(){
   if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
 }
 function submitApplication(){
+  /* Locked: no second application once one is submitted. */
+  if(typeof isSubmitted==='function' && isSubmitted()){ step=7; renderStep(); if(typeof renderGrantState==='function') renderGrantState(); toast('Application already submitted'); return; }
+  if(typeof draftAppRef!=='undefined' && draftAppRef && step===7){ toast('Application already submitted'); return; }
   step=7; renderStep();
   var ref='FGSG-2026-'+Math.floor(1000+Math.random()*9000);
   if(typeof draftAppRef!=='undefined') draftAppRef=ref;
+  if(typeof draftSubmittedAt!=='undefined') draftSubmittedAt=Date.now();
   if(typeof saveDraft==='function') saveDraft();
   document.getElementById('refCode').textContent=ref;
   var pay=document.querySelector('input[name="pay"]:checked').value;
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';
-  document.getElementById('successSummary').textContent=name.split(' ')[0]+' · '+school+' · '+pay+' · Pending — Waiting for Approval';
+  document.getElementById('successSummary').textContent=name.split(' ')[0]+' · '+school+' · '+pay+' · ₦50,000 Grant · Pending — Waiting for Approval';
   var esc2=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
   document.getElementById('bankSummary').innerHTML='<b>'+esc2(pay)+'</b>'+(pay==='Bank Account'&&val('fBank')?' · <b>'+esc2(val('fBank'))+'</b> •••'+esc2(val('fAcct').slice(-3)||'000'):'');
   document.getElementById('walletStatus').textContent='Pending — Waiting for Approval';
+  renderStep();
+  if(typeof renderGrantState==='function') renderGrantState();
   renderProfile();
   toast('Application submitted — pending approval');
 }
