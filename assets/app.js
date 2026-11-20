@@ -234,7 +234,27 @@ function renderWalletId(){
   if(el) el.textContent='Wallet ID · '+getOrCreateWalletId();
 }
 
-/* ---------- page routing: landing / auth / app are separate pages ---------- */
+/* ---------- page routing: landing / auth / app are separate pages ----------
+   Page changes slide sideways in the direction of travel: a
+   later page comes in from the right, going back comes in from
+   the left. The navbar is universal: ONE dock element at body
+   level, outside every page, inherited by all of them — a page
+   switch never rebuilds or re-animates it, so it cannot blink
+   or lag. It belongs to the portal, so goPage shows it only
+   while the portal page is open (body.in-portal); there is no
+   bottom navbar on the landing or auth pages. */
+var currentPageName='landing';
+var PAGE_ORDER={landing:0,auth:1,app:2};
+var VIEW_ORDER={home:0,bank:1,application:2,notices:3,me:4};
+function slideIn(el,dir){
+  if(!el) return;
+  el.classList.remove('anim-fwd','anim-back');
+  void el.offsetWidth;
+  el.classList.add(dir==='back'?'anim-back':'anim-fwd');
+}
+document.addEventListener('animationend',function(e){
+  if(e.target && e.target.classList) e.target.classList.remove('anim-fwd','anim-back');
+});
 function goPage(page,authTab){
   /* proper auth check: the dashboard only opens with a live
      browser session — otherwise route to the Auth page */
@@ -243,11 +263,18 @@ function goPage(page,authTab){
     page='auth'; if(!authTab) authTab='login';
   }
   if(page!=='app' && typeof liveRunning!=='undefined' && liveRunning && typeof liveReset==='function'){ liveReset(); }
+  var prevPage=currentPageName;
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById('page-'+page); if(el) el.classList.add('active');
+  /* the universal dock lives outside the pages; only its
+     visibility follows the current page — the element itself,
+     its position and its sliding circle are never touched */
+  document.body.classList.toggle('in-portal',page==='app');
+  if(el && prevPage!==page) slideIn(el,(PAGE_ORDER[page]<PAGE_ORDER[prevPage])?'back':'fwd');
+  currentPageName=page;
   if(page==='auth' && authTab) switchAuthTab(authTab);
   window.scrollTo({top:0});
-  if(page==='app'){ requestAnimationFrame(moveDockIndicator); setTimeout(moveDockIndicator,380); }
+  if(page==='app'){ requestAnimationFrame(function(){syncNavBubble();}); setTimeout(function(){syncNavBubble(true);},380); }
 }
 function goLandingAnchor(e,id){
   e.preventDefault(); goPage('landing');
@@ -261,22 +288,55 @@ function switchAuthTab(name){
 /* authLogin / authSignup / authForgot / authLogout live in
    auth.js, backed by the browser-built-in account store
    (FGSGAuth) with hashed passwords and real checks. */
-/* dock highlighter: a sliding lime pill glides behind the active tab */
-function moveDockIndicator(){
-  var btn=document.querySelector('.dock button.active'), ind=document.getElementById('dockIndicator');
-  if(!btn||!ind||!btn.offsetParent) return;
-  ind.style.left=btn.offsetLeft+'px'; ind.style.width=btn.offsetWidth+'px';
+/* ---------- sliding active tab ----------
+   The portal dock carries a green circle holding the active
+   tab's icon, sitting on top of the pill — straddling its top
+   edge, in a depression carved into the pill where it sits —
+   while the tab's label stays in the pill underneath it. Tap
+   another tab and the circle glides along the top of the pill
+   to where you tapped — the animation from the reference
+   navbars. Every tab is treated the same, the middle
+   Application tab included. */
+function placeBubble(nav,bubble,btn,centre,instant){
+  if(!nav||!bubble) return;
+  var target=btn||centre; if(!target) return;
+  var nr=nav.getBoundingClientRect(), tr=target.getBoundingClientRect();
+  if(!nr.width||!tr.width) return;
+  var cx=tr.left+tr.width/2-nr.left;
+  if(instant) bubble.classList.add('no-anim');
+  bubble.style.left=(cx-bubble.offsetWidth/2)+'px';
+  if(btn){
+    var svg=btn.querySelector('svg');
+    if(svg) bubble.innerHTML=svg.outerHTML;
+    bubble.classList.remove('bubble-off');
+  } else {
+    bubble.classList.add('bubble-off');
+  }
+  if(instant){ void bubble.offsetWidth; bubble.classList.remove('no-anim'); }
 }
-window.addEventListener('resize',moveDockIndicator);
-window.addEventListener('load',function(){ setTimeout(moveDockIndicator,60); });
+function syncNavBubble(instant){
+  var useInstant= instant===true || !syncNavBubble._ready;
+  var dock=document.querySelector('.dock'), db=document.getElementById('dockBubble');
+  if(dock&&db){
+    placeBubble(dock,db,dock.querySelector('.dock-row button.active'),null,useInstant);
+  }
+  syncNavBubble._ready=true;
+}
+window.addEventListener('resize',function(){ syncNavBubble(true); });
+window.addEventListener('load',function(){ setTimeout(function(){ syncNavBubble(true); },60); });
 
-/* view switching */
+/* view switching — the incoming view slides in from the side
+   it sits on in the dock */
+var currentViewName='home';
 function showView(name){
   if(name!=='application' && typeof liveRunning!=='undefined' && liveRunning && typeof liveReset==='function'){ liveReset(); }
+  var prevView=currentViewName;
   document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
   var el=document.getElementById('view-'+name); if(el) el.classList.add('active');
+  if(el && prevView!==name) slideIn(el,(VIEW_ORDER[name]<VIEW_ORDER[prevView])?'back':'fwd');
+  currentViewName=name;
   document.querySelectorAll('.dock button').forEach(function(b){b.classList.toggle('active',b.dataset.view===name)});
-  requestAnimationFrame(moveDockIndicator);
+  requestAnimationFrame(function(){ syncNavBubble(); });
   if(typeof renderGrantState==='function') renderGrantState();
   if(name==='me') renderProfile();
 }
@@ -285,10 +345,17 @@ document.querySelectorAll('.dock button').forEach(function(b){b.addEventListener
 /* multi-step form — Step 1 is the start screen (no login
    re-confirmation: the user is already signed in), so the
    counted form steps are Personal (2) through Payout (6). */
-var step=1, totalSteps=5, liveDone=false, feeDone=false;
+var step=1, totalSteps=5, liveDone=false, feeDone=false, lastRenderedStep=null;
 var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Documents & identity',5:'Verification fee — Paystack',6:'Choose payout',7:'Pending — Waiting for Approval'};
 function renderStep(){
   document.querySelectorAll('.fstep').forEach(function(f){f.classList.toggle('active',+f.dataset.step===step)});
+  /* steps slide in the direction of travel: Continue from the
+     right, Back from the left */
+  var activeStepEl=document.querySelector('.fstep.active');
+  if(activeStepEl && lastRenderedStep!==null && lastRenderedStep!==step){
+    slideIn(activeStepEl, step<lastRenderedStep?'back':'fwd');
+  }
+  lastRenderedStep=step;
   if(step===1){
     document.getElementById('stepTitle').textContent='Application — Start';
     document.getElementById('stepPct').textContent='0%';
@@ -320,8 +387,6 @@ function renderStep(){
   var showRestart=!lockedRb && hasProgressRb;
   var rb=document.getElementById('restartAppBtn');
   if(rb){ rb.style.display= showRestart ? 'inline-flex':'none'; }
-  var crb=document.getElementById('cancelRestartBtn');
-  if(crb){ crb.style.display= (showRestart && step>=2 && step<=6) ? 'inline-flex':'none'; }
   if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
 }
 function val(id){return document.getElementById(id).value.trim();}
@@ -759,8 +824,6 @@ function renderGrantState(){
   /* A submitted application is locked: no restart, no cancel, no reapply. */
   var rb=document.getElementById('restartAppBtn');
   if(rb && submitted){ rb.style.display='none'; }
-  var crb2=document.getElementById('cancelRestartBtn');
-  if(crb2 && submitted){ crb2.style.display='none'; }
   renderWithdrawState();
   if(typeof renderTxHistory==='function') renderTxHistory();
 }
@@ -860,7 +923,7 @@ function restoreDraft(){
 var restartArmed=false, restartArmTimer=null;
 function setRestartArmed(armed){
   restartArmed=!!armed;
-  [['restartAppBtn','Cancel & Restart Application'],['cancelRestartBtn','Cancel & Restart']].forEach(function(pair){
+  [['restartAppBtn','Cancel & Restart Application']].forEach(function(pair){
     var b=document.getElementById(pair[0]); if(!b) return;
     b.classList.toggle('armed',restartArmed);
     b.textContent=restartArmed?'Tap again to confirm restart':pair[1];
@@ -903,8 +966,6 @@ function restartApplication(){
 }
 var restartBtnEl=document.getElementById('restartAppBtn');
 if(restartBtnEl) restartBtnEl.addEventListener('click',restartApplication);
-var cancelRestartBtnEl=document.getElementById('cancelRestartBtn');
-if(cancelRestartBtnEl) cancelRestartBtnEl.addEventListener('click',restartApplication);
 var appFormEl=document.getElementById('appForm');
 if(appFormEl){ appFormEl.addEventListener('input',saveDraft); appFormEl.addEventListener('change',saveDraft); }
 window.addEventListener('pagehide',saveDraft);

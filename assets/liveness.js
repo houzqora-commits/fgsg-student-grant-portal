@@ -138,9 +138,9 @@ function liveOnResults(results){
   liveNoFaceFrames=0;
   if(!liveFaceSeen){ liveFaceSeen=true; liveSetBadge('Face found — scanning','ok'); }
   /* draw a few tracking dots so the presenter can see the scan is live */
-  ctx.fillStyle='rgba(142,230,58,.9)';
+  ctx.fillStyle='rgba(0,163,92,.9)';
   [1,33,263,10,152].forEach(function(i){ var p=lm[i]; ctx.beginPath(); ctx.arc(p.x*canvas.width,p.y*canvas.height,4,0,6.2832); ctx.fill(); });
-  ctx.strokeStyle='rgba(142,230,58,.55)'; ctx.lineWidth=2; ctx.beginPath();
+  ctx.strokeStyle='rgba(0,163,92,.55)'; ctx.lineWidth=2; ctx.beginPath();
   var oval=[57,133,195,93,2,5,164,1,162,14,13,311,402,14,317,182];
   oval.forEach(function(i,k){ var p=lm[i]; if(k===0) ctx.moveTo(p.x*canvas.width,p.y*canvas.height); else ctx.lineTo(p.x*canvas.width,p.y*canvas.height); });
   ctx.closePath(); ctx.stroke();

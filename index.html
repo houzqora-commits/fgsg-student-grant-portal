@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-<meta name="color-scheme" content="dark light"/>
+<meta name="color-scheme" content="light"/>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
 <meta http-equiv="Pragma" content="no-cache"/>
 <meta http-equiv="Expires" content="0"/>
@@ -37,7 +37,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=28">
+<link rel="stylesheet" href="assets/styles.css?v=38">
 </head>
 <body>
 
@@ -48,6 +48,7 @@
       <span><b>FGSG</b><small>Student Grant</small></span>
     </a>
     <nav class="top-links" aria-label="Top">
+      <a href="#about" onclick="goLandingAnchor(event,'about')">About</a>
       <a href="#guidelines" onclick="goLandingAnchor(event,'guidelines')">Guidelines</a>
       <a href="#faqs" onclick="goLandingAnchor(event,'faqs')">FAQs</a>
       <a href="#help" onclick="goLandingAnchor(event,'help')">Help Desk</a>
@@ -107,6 +108,15 @@
     <div class="step-card"><div class="num">2</div><h3>Upload Documents</h3></div>
     <div class="step-card"><div class="num">3</div><h3>Liveness &amp; Verification</h3></div>
     <div class="step-card"><div class="num">4</div><h3>Get Paid ₦50,000</h3></div>
+  </div>
+</section>
+
+<!-- ABOUT THE PROGRAM -->
+<section class="block" id="about">
+  <div class="sec-head"><h2>About the <span>Program</span></h2></div>
+  <div class="about-card">
+    <p>The Grant Program is a flagship educational initiative of the Federal government administration, designed to provide direct financial support to students of every federal Government Students In Nigeria studying in public tertiary institutions across Nigeria. This program reflects the government's unwavering commitment to making quality education accessible and affordable for every student in Nigeria.</p>
+    <p class="about-grant">₦50,000 Grant per student</p>
   </div>
 </section>
 
@@ -367,7 +377,6 @@
 
         <div class="form-nav" id="formNav">
           <button type="button" class="btn btn-outline-dark" id="backBtn">← Back</button>
-          <button type="button" class="btn btn-cancel" id="cancelRestartBtn" style="display:none">Cancel &amp; Restart</button>
           <button type="button" class="btn btn-dark" id="nextBtn">Continue →</button>
         </div>
       </form>
@@ -494,18 +503,40 @@
       </div>
     </div>
 
-    <!-- DOCK -->
-    <nav class="dock" aria-label="Portal">
-      <span class="dock-indicator" id="dockIndicator" aria-hidden="true"></span>
-      <button data-view="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>Home</button>
-      <button data-view="application"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 12h8M9 16h8"/></svg>Application</button>
-      <button data-view="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9 12 3l9 6"/><path d="M4 9v10M20 9v10M9 9v10M15 9v10M2 19h20"/></svg>Bank</button>
-      <button data-view="notices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>Notices<span class="badge">3</span></button>
-      <button data-view="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Me</button>
-    </nav>
   </div>
 </div>
 </div><!-- /page-app -->
+
+<!-- UNIVERSAL NAVBAR — one single dock for the whole site,
+     defined once here at body level, outside every page, the
+     way the top header already is. Pages inherit it: it is
+     never part of a page, so a page switch never rebuilds,
+     re-inserts or re-animates it — it stays locked to the
+     bottom of the screen with its active-tab circle exactly
+     where it was, no blink and no load delay. It belongs to
+     the portal, so it is shown only while the portal page is
+     open (body.in-portal, set by goPage in app.js); there is
+     no bottom navbar on the landing or auth pages.
+     Built to the reference: one large white pill, all five
+     tabs in a single row inside it at the same level, the
+     middle Application tab included. The active tab's icon
+     rides in a green circle (.nav-bubble) that sits on top of
+     the pill, straddling its top edge, and the pill is
+     depressed where the circle sits — a ring of the page
+     colour plus concave fillets carve the notch. The active
+     tab's text stays in the pill under the circle, and the
+     circle glides along the top of the pill to whichever tab
+     is tapped. -->
+<nav class="dock" aria-label="Portal">
+  <span class="nav-bubble bubble-off" id="dockBubble" aria-hidden="true"></span>
+  <div class="dock-row">
+    <button data-view="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 3l9 8"/><path d="M5 10v10h14V10"/></svg>Home</button>
+    <button data-view="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9 12 3l9 6"/><path d="M4 9v10M20 9v10M9 9v10M15 9v10M2 19h20"/></svg>Bank</button>
+    <button data-view="application"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 12h8M9 16h8"/></svg>Application</button>
+    <button data-view="notices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>Notices<span class="badge">3</span></button>
+    <button data-view="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>Me</button>
+  </div>
+</nav>
 
 <footer>
   <div class="foot-in">
@@ -585,9 +616,9 @@
 
 <div class="toast" id="toast" role="status"></div>
 
-<script src="assets/auth.js?v=28"></script>
-<script src="assets/app.js?v=28"></script>
-<script src="assets/liveness.js?v=28"></script>
-<script src="assets/payment.js?v=28"></script>
+<script src="assets/auth.js?v=38"></script>
+<script src="assets/app.js?v=38"></script>
+<script src="assets/liveness.js?v=38"></script>
+<script src="assets/payment.js?v=38"></script>
 </body>
 </html>
