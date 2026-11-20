@@ -119,8 +119,8 @@ function renderProfile(){
       Academic / Background fields (matric, parents'
       status, phone, no-other-scholarship confirmation) onto
       that same applications row; 2) every uploaded file — JAMB
-      letter, fees receipt, statement of result,
-      certificate of origin and birth certificate — to the
+      letter, fees receipt, statement of result, O'Level
+      results, certificate of origin and birth certificate — to the
       student-documents bucket plus their documents rows.
    The Pending UI below never waits on this; failures are
    logged by fgsgSync and the local flow is unchanged. */
@@ -142,6 +142,7 @@ function syncApplicationToSupabase(ref){
     {file:fileOf('upFees'), kind:'fees_receipt'},
     {file:fileOf('upNin'), kind:'nin_card'},
     {file:fileOf('upResult'), kind:'semester_result'},
+    {file:fileOf('upOlevel'), kind:'olevel_result'},
     {file:fileOf('upOrigin'), kind:'certificate_of_origin'},
     {file:fileOf('upBirth'), kind:'birth_certificate'}
   ];

@@ -109,7 +109,7 @@ async function fgsgSaveApplication(form, reference) {
      yet the update is skipped and the application save above
      still stands — the submission flow never breaks. The new
      document uploads travel separately as documents rows
-     (semester_result,
+     (semester_result, olevel_result,
      certificate_of_origin, birth_certificate). */
   if (row && row.id && (form.fMatric || form.fPhone || form.fParentsStatus)) {
     try {
@@ -318,6 +318,7 @@ var FGSG_REVIEW_ITEMS = [
   {key:'doc_jamb_letter', label:'JAMB Admission Letter', kind:'document', docKind:'jamb_letter', uploadId:'upJamb'},
   {key:'doc_fees_receipt', label:'Last School Fees Receipt', kind:'document', docKind:'fees_receipt', uploadId:'upFees'},
   {key:'doc_semester_result', label:'Statement of Result', kind:'document', docKind:'semester_result', uploadId:'upResult'},
+  {key:'doc_olevel_result', label:"O'Level Results: WAEC/NECO", kind:'document', docKind:'olevel_result', uploadId:'upOlevel'},
   {key:'doc_certificate_of_origin', label:'Certificate of Origin', kind:'document', docKind:'certificate_of_origin', uploadId:'upOrigin'},
   {key:'doc_birth_certificate', label:'Birth Certificate / Age Declaration', kind:'document', docKind:'birth_certificate', uploadId:'upBirth'}
 ];
