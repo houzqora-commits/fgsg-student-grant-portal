@@ -13,45 +13,18 @@
    x, so they never separate).
 
    This bar is ONE element at body level, outside every page.
-   It is locked to the bottom and built to NEVER move, repaint
-   or re-layout when pages or views switch:
-   - It is built once and never rebuilt. Its display state
-     flips only when entering or leaving the portal — never
-     between the portal's own views (Home, Bank, Application,
-     Notices, Me), so switching views cannot make it drop,
-     pop back up or flicker.
-   - Its width is based on 100%, never 100vw, and the page
-     reserves a stable scrollbar gutter (below), so the
-     centred bar cannot jump sideways when a view switch
-     changes the page height and the scrollbar comes or goes.
-   - A constant GPU layer (translate3d) keeps the bar on its
-     own compositor layer, so page slide animations and
-     reflows never repaint it.
-   - The bar itself has NO entrance animation and NO
-     transition. Only the bubble inside it glides. dock.js
-     measures its width once and never re-measures, re-centres
-     or re-animates it on a page or view switch.
+   It is shown only inside the portal and hidden elsewhere.
    ============================================================ */
-
-/* keep the viewport width identical on short and tall views,
-   so the centred fixed bar never shifts when a view switch
-   changes the page height */
-html{scrollbar-gutter:stable}
 
 #fgsgDock{
   position:fixed;
   left:0;
   right:0;
   bottom:calc(12px + env(safe-area-inset-bottom, 0px));
-  width:min(620px, calc(100% - 20px));
+  width:min(620px, calc(100vw - 20px));
   margin:0 auto;
   z-index:75;
   display:none;
-  animation:none;
-  transition:none;
-  transform:translate3d(0,0,0);
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
 }
 #fgsgDock.on{display:block}
 

@@ -717,5 +717,3 @@ section[id],.hero[id]{scroll-margin-top:24px}
 .sr-row-main span{display:block;font-size:13px;font-weight:600;color:#5c6f63;line-height:1.5;margin-top:2px;word-break:break-word}
 .sr-row-main .sr-row-reason{color:#7c1a14}
 #studentReviewApp .sr-card{margin:0 auto 20px}
-
-html{scrollbar-gutter:stable}

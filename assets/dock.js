@@ -1,26 +1,8 @@
 /* ============================================================
    FGSG — portal dock behaviour
    One bar, built once at body level (see index.html), locked
-   to the bottom by CSS. Page and view switches never
-   re-create or rebuild it; its visibility flips only when
-   entering or leaving the portal, never between the portal's
-   own views.
-
-   Steadiness rules (the bar must not drop, pop, flicker,
-   jump sideways or re-layout when switching between Home,
-   Bank, Application, Notices and Me):
-   - The pill width is measured ONCE at load and re-measured
-     ONLY when the window WIDTH actually changes. A view
-     switch never reads layout, so it can never force a
-     reflow or re-centre the bar.
-   - Height-only resizes (the mobile browser chrome sliding
-     in and out while pages change height) are ignored
-     completely — the bar does not react to them at all.
-   - There is exactly ONE sync path (the showView / goPage
-     wrap below, plus tab taps through that same wrap) and
-     exactly ONE glide: a tap never starts a second glide,
-     and a sync that finds the bubble already on — or already
-     gliding to — the active tab touches nothing at all.
+   to the bottom by CSS. Its visibility follows whether the
+   portal page (page-app) is active.
 
    The bubble and the notch are driven from the SAME animated
    x on every frame — the bubble by transform, the notch by
@@ -49,42 +31,27 @@
   };
 
   var activeView=null;   /* view the bubble currently marks */
-  var inPortal=null;     /* last synced portal visibility */
   var curX=null;         /* current bubble centre, px from pill left */
-  var paintedX=null;     /* last x actually written to the DOM */
-  var pillW=0;           /* pill width, measured once (see measure) */
-  var lastInnerW=window.innerWidth||0;
   var rafId=null;
-  var glideTarget=null;  /* x the running glide is heading to */
   var reduceMotion=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* The ONLY place layout is read. Called when the bar first
-     appears in the portal, and again only after the window
-     width has really changed — never during a page or view
-     switch. (While the bar is hidden outside the portal it
-     has no width to read, so a zero read keeps the last
-     good measurement.) */
   function measure(){
-    var w=pill.clientWidth||dock.clientWidth||0;
-    if(w) pillW=w;
+    return pill.clientWidth||dock.clientWidth||0;
   }
   function centreFor(view){
     var i=VIEWS.indexOf(view); if(i<0) i=0;
-    return (pillW/VIEWS.length)*(i+0.5);
+    var w=measure();
+    return (w/VIEWS.length)*(i+0.5);
   }
   function paint(x){
-    if(paintedX!==null && Math.abs(x-paintedX)<0.01) return; /* no repaint for no movement */
-    paintedX=x;
     bubble.style.transform='translate('+(x-28)+'px,-28px)';
     var mask='radial-gradient(circle '+NOTCH_R+'px at '+x+'px 0px, transparent '+(NOTCH_R-1)+'px, #000 '+NOTCH_R+'px)';
     bg.style.webkitMaskImage=mask;
     bg.style.maskImage=mask;
   }
   function glideTo(target){
-    if(rafId && glideTarget===target) return; /* already gliding there — never restart */
-    if(curX===null || reduceMotion){ curX=target; glideTarget=null; paint(curX); return; }
+    if(curX===null || reduceMotion){ curX=target; paint(curX); return; }
     if(rafId) cancelAnimationFrame(rafId);
-    glideTarget=target;
     var from=curX, start=null, dur=460;
     function frame(ts){
       if(start===null) start=ts;
@@ -92,26 +59,21 @@
       var e=1-Math.pow(1-t,4); /* easeOutQuart — quick, then settles */
       curX=from+(target-from)*e;
       paint(curX);
-      if(t<1){ rafId=requestAnimationFrame(frame); } else { rafId=null; glideTarget=null; curX=target; paint(curX); }
+      if(t<1){ rafId=requestAnimationFrame(frame); } else { rafId=null; curX=target; paint(curX); }
     }
     rafId=requestAnimationFrame(frame);
   }
   function setActive(view, animate){
     if(VIEWS.indexOf(view)<0) view='home';
-    if(!pillW) measure(); /* first appearance in the portal: measure once, then never again on a switch */
     var target=centreFor(view);
     var viewChanged=view!==activeView;
-    if(!viewChanged){
-      if(rafId && glideTarget===target) return; /* already on its way there */
-      if(!rafId && curX!==null && Math.abs(target-curX)<0.01) return; /* already there: touch nothing */
-    }
     activeView=view;
     if(viewChanged){
       tabs.forEach(function(t){ t.classList.toggle('on', t.dataset.dockView===view); });
       bubbleIcon.innerHTML=FILLED[view]||FILLED.home;
     }
     if(animate && curX!==null && Math.abs(target-curX)>1){ glideTo(target); }
-    else { if(rafId){ cancelAnimationFrame(rafId); rafId=null; } glideTarget=null; curX=target; paint(curX); }
+    else { if(rafId){ cancelAnimationFrame(rafId); rafId=null; } curX=target; paint(curX); }
   }
   function currentViewFromDom(){
     var active=document.querySelector('.view.active');
@@ -124,30 +86,20 @@
   function syncDock(animate){
     var appPage=document.getElementById('page-app');
     var portalNow=!!(appPage && appPage.classList.contains('active'));
-    if(portalNow!==inPortal){
-      inPortal=portalNow;
-      dock.classList.toggle('on', portalNow);
-      document.body.classList.toggle('dock-on', portalNow);
-    }
+    dock.classList.toggle('on', portalNow);
+    document.body.classList.toggle('dock-on', portalNow);
     if(portalNow){ setActive(currentViewFromDom(), animate); }
   }
 
   tabs.forEach(function(t){
     t.addEventListener('click',function(){
       var v=t.dataset.dockView;
-      if(v===activeView) return; /* already there: no repaint, no re-glide */
-      /* Go through showView only — its wrap below is the single
-         sync path, so the bubble glides exactly once. Setting
-         the active tab here as well used to start a first glide
-         that the sync then cancelled and restarted (a visible
-         stutter in the bar on every tap). */
+      setActive(v,true);
       if(typeof window.showView==='function') window.showView(v);
-      else setActive(v,true);
     });
   });
 
-  /* follow page / view switches through the site's own routers
-     only — the one and only sync path */
+  /* follow page / view switches through the site's own routers */
   if(typeof window.showView==='function'){
     var origShowView=window.showView;
     window.showView=function(name){ var r=origShowView.apply(this,arguments); syncDock(true); return r; };
@@ -156,20 +108,10 @@
     var origGoPage=window.goPage;
     window.goPage=function(){ var r=origGoPage.apply(this,arguments); syncDock(true); return r; };
   }
-  /* Resize: react ONLY to a real width change (rotation, a
-     wider/narrower window). Height-only resizes — the mobile
-     browser chrome sliding in and out as pages change height —
-     are ignored, so they can never make the bar drop or pop. */
   window.addEventListener('resize',function(){
-    var w=window.innerWidth||0;
-    if(w===lastInnerW) return;
-    lastInnerW=w;
-    measure();
-    if(inPortal && activeView) setActive(activeView,false);
+    if(activeView) setActive(activeView,false);
   });
 
-  /* first sync: snapped to the current view, no glide. The
-     width itself is measured when the bar first appears in
-     the portal (see setActive), not on every switch. */
+  /* first sync: snapped to the current view, no glide */
   syncDock(false);
 })();
