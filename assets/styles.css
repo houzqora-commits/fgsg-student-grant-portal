@@ -498,14 +498,6 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,163,92,.35);bor
 .notice p{color:#4c554c;font-size:14.5px;line-height:1.6}
 .notice time{font-size:12.5px;font-weight:700;color:var(--green);letter-spacing:.05em;text-transform:uppercase}
 
-/* dock nav — modelled on the reference screenshot */
-.dock{position:sticky;bottom:12px;z-index:50;margin:var(--s6) auto 0;max-width:520px;background:#0d120d;border:1.5px solid var(--line);border-radius:999px;display:flex;padding:7px;gap:4px;box-shadow:0 14px 34px rgba(0,0,0,.45)}
-.dock button{flex:1;background:transparent;border:none;color:#cfd6cf;border-radius:999px;padding:7px 2px;font-weight:700;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:44px;justify-content:center;position:relative;z-index:1;transition:color .25s ease,transform .08s ease}
-.dock button:active{transform:scale(.96)}
-.dock button svg{width:20px;height:20px}
-.dock button.active{background:transparent;color:#fff}
-.dock button.active svg{stroke-width:2.4}
-.dock .badge{position:absolute;top:2px;right:calc(50% - 20px);background:#e63b2e;color:#fff;font-size:11px;font-weight:900;min-width:19px;height:19px;border-radius:99px;display:grid;place-items:center;padding:0 5px}
 
 /* about the program */
 .about-card{border:1px solid var(--line);border-radius:var(--radius);padding:var(--s6) var(--s6);background:var(--panel);max-width:760px;margin:0 auto;text-align:center}
@@ -549,13 +541,12 @@ footer b{color:#fff}
   .help-band{padding:var(--card-pad)}
   .help-band .btn{width:100%}
   .ps-card-body{padding:var(--s5)}
-  .dock{bottom:12px;margin-top:var(--s6)}
   .toast{bottom:88px}
   footer{padding:var(--s8) var(--page-x) var(--s9)}
 }
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .btn,.auth-tab,.pay-opt,.dock button{transition:none}
+  .btn,.auth-tab,.pay-opt{transition:none}
 }
 
 /* ---------- CENTRED, COMPACT FINISH ---------- */
@@ -659,9 +650,6 @@ details .a{color:var(--ink-soft)}
 .receipt-head{background:var(--green-deep)}
 .receipt-brand span{color:#c9f5da}
 
-/* in-app dock — white pill, green indicator */
-.dock{background:#ffffff;border-color:var(--line);box-shadow:0 14px 34px rgba(0,90,50,.18)}
-.dock button{color:#44604e}
 
 /* footer + toast */
 footer{background:#ffffff}
@@ -672,70 +660,6 @@ footer b{color:#10231a}
 /* anchored sections clear the bottom of the screen the same way
    they cleared the sticky header */
 section[id],.hero[id]{scroll-margin-top:24px}
-
-/* ============================================================
-   APPLIED NAVBAR — portal only (2026-11-20), rebuilt to the
-   reference the user sent: one large white pill with a green
-   outline, locked to the base of the screen. All five tabs —
-   Home, Bank, Application, Notices, Me — sit in one row inside
-   the pill at the same level, the middle Application tab
-   included. The active tab's icon leaves the row and rides in a
-   green circle (.nav-bubble) that sits ON TOP of the pill,
-   straddling its top edge, and the pill is depressed where the
-   circle sits: a ring of the page colour around the circle plus
-   concave fillets at its sides carve a notch into the pill's
-   top edge. The active tab's text stays in the pill, under the
-   circle. Tap another tab and the circle glides along the top
-   of the pill to where you tapped. There is no bottom navbar
-   on the landing or auth pages. Page, view and step changes
-   slide sideways in the direction of travel (see the end of
-   this file).
-   ============================================================ */
-
-/* ---- the universal dock: ONE element at body level, outside
-   every page (see the markup in index.html), so page switches
-   never rebuild or re-animate it. The large pill, every tab
-   level inside it, locked to the base of the screen — fixed,
-   it never scrolls or moves. Shown only in the portal via
-   body.in-portal. --notch is the colour of the surface the
-   pill floats on (the app shell), used to carve the depression
-   the active circle sits in. ---- */
-.dock{--notch:#f6fbf7;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(520px,calc(100% - 20px));z-index:50;background:#ffffff;border:1.5px solid var(--green);border-radius:999px;box-shadow:0 14px 26px rgba(0,90,50,.22);padding:5px 8px;display:none;overflow:visible}
-/* universal navbar: the dock is ONE element at body level,
-   outside every page, so a page switch never rebuilds or
-   re-animates it — no blink, no load delay. It belongs to
-   the portal, so it is shown only while the portal page is
-   open (goPage sets body.in-portal). */
-body.in-portal .dock{display:block}
-/* room at the end of the portal so the fixed dock never
-   covers the last content */
-.shell{padding-bottom:118px}
-.dock-row{position:relative;display:flex;align-items:stretch;gap:2px}
-.dock .dock-row button{min-width:0}
-.dock .dock-row button.active{color:var(--green-deep);font-weight:800}
-/* the active tab's icon rides in the sliding bubble, so the copy
-   inside the bar steps aside — the bold label stays */
-.dock .dock-row button.active svg{visibility:hidden}
-
-/* ---- sliding active tab (the reference animation) ----
-   The green circle carrying the active tab's icon sits ON TOP
-   of the pill: centred just above the pill's top edge, most of
-   the circle stands proud of the bar and only its lower part
-   dips into the pill, above the tab's label, which stays in
-   the pill underneath it. The thick --notch ring around the
-   circle cuts the pill's outline where they cross, and the two
-   fillets (::before / ::after) paint the page colour in a
-   concave sweep on each side, so the pill reads as depressed —
-   pressed in — at the exact place the circle is sitting on.
-   JS moves the circle by setting its left position; the
-   transition does the gliding to the tab you tap. */
-.nav-bubble{position:absolute;top:-7px;transform:translateY(-50%);left:0;width:54px;height:54px;border-radius:50%;background:var(--green);border:6px solid var(--notch);color:#ffffff;display:grid;place-items:center;z-index:3;pointer-events:none;box-shadow:0 10px 18px rgba(0,90,50,.28);transition:left .5s cubic-bezier(.65,0,.25,1.08),opacity .28s ease}
-.nav-bubble svg{width:22px;height:22px}
-.nav-bubble::before,.nav-bubble::after{content:"";position:absolute;top:60%;width:16px;height:16px;background:transparent;pointer-events:none}
-.nav-bubble::before{left:-18px;border-top-right-radius:16px;box-shadow:2px -8px 0 0 var(--notch)}
-.nav-bubble::after{right:-18px;border-top-left-radius:16px;box-shadow:-2px -8px 0 0 var(--notch)}
-.nav-bubble.bubble-off{opacity:0}
-.nav-bubble.no-anim{transition:none}
 
 /* ---- page sliding, restored ----
    Switching pages, dashboard views or application steps slides
@@ -749,165 +673,7 @@ body.in-portal .dock{display:block}
 .page.anim-back,.view.anim-back,.fstep.anim-back{animation:slideInBack .34s cubic-bezier(.25,.7,.3,1)}
 
 @media(prefers-reduced-motion:reduce){
-  .nav-bubble{transition:none}
   .page.anim-fwd,.page.anim-back,.view.anim-fwd,.view.anim-back,.fstep.anim-fwd,.fstep.anim-back{animation:none}
-}
-
-/* ============================================================
-   FLOATING PILL NAVBAR — reference rebuild (2026-11-20)
-   This section supersedes every earlier .dock / .nav-bubble
-   rule above. The portal surface the pill floats on is the
-   soft light grey #EEEEEE; the pill itself is white, 715px x
-   100px on desktop with a 40px radius, centred and locked to
-   the bottom of the screen. A radial mask cuts a smooth,
-   symmetrical circular notch into the pill's top centre,
-   centred exactly on the raised centre button, so the pill
-   curves around it instead of the button sitting on a plain
-   bar. The centre button is always botanical green #29936F
-   with the white sprout outline, in every active state.
-   Side destinations: thin line icons only, no labels —
-   #C5C5C5 inactive, #29936F active with an 11px green dot
-   directly underneath the icon.
-   ============================================================ */
-.shell-wrap{background:#EEEEEE}
-.dock{
-  --fab:92px;
-  --notch-r:57px;
-  --notch-cy:-11px;
-  position:fixed;
-  left:50%;
-  transform:translateX(-50%);
-  bottom:calc(18px + env(safe-area-inset-bottom,0px));
-  width:min(715px,calc(100% - 24px));
-  height:100px;
-  max-width:none;
-  margin:0;
-  padding:0;
-  background:transparent;
-  border:none;
-  border-radius:0;
-  box-shadow:none;
-  display:none;
-  overflow:visible;
-  z-index:50;
-}
-body.in-portal .dock{display:block}
-/* the white pill, with the notch carved out of its top edge:
-   the mask circle shares the centre button's centre point,
-   so the recess stays perfectly round at any dock width */
-.dock-pill{
-  position:absolute;inset:0;
-  background:#ffffff;
-  border-radius:40px;
-  filter:drop-shadow(0 14px 28px rgba(23,43,34,.14));
-  -webkit-mask-image:radial-gradient(circle var(--notch-r) at 50% var(--notch-cy),transparent calc(var(--notch-r) - 1px),#000 var(--notch-r));
-  mask-image:radial-gradient(circle var(--notch-r) at 50% var(--notch-cy),transparent calc(var(--notch-r) - 1px),#000 var(--notch-r));
-}
-/* five evenly distributed destinations: columns 1, 2, 4, 5
-   hold the line icons; column 3 is the notch, under the
-   raised centre button */
-.dock-row{
-  position:relative;z-index:1;
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  align-items:stretch;
-  height:100%;
-  padding:6px 10px;
-}
-.dock .dock-row button{
-  grid-row:1;
-  position:relative;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:7px;
-  min-width:0;min-height:56px;
-  padding:10px 4px 8px;
-  background:transparent;border:none;border-radius:20px;
-  color:#C5C5C5;
-  transition:color .3s ease,transform .12s ease;
-}
-.dock .dock-row button:nth-child(1){grid-column:1}
-.dock .dock-row button:nth-child(2){grid-column:2}
-.dock .dock-row button:nth-child(3){grid-column:4}
-.dock .dock-row button:nth-child(4){grid-column:5}
-.dock .dock-row button svg{
-  width:27px;height:27px;flex:0 0 27px;
-  visibility:visible;
-  transition:stroke-width .3s ease;
-}
-.dock .dock-row button:active{transform:scale(.9)}
-.dock .dock-row button.active{
-  color:#29936F;
-  font-weight:700;
-}
-.dock .dock-row button.active svg{stroke-width:2.15;visibility:visible}
-/* the active indicator: an 11px green dot directly under the
-   icon; it fades/scales in on the newly selected destination
-   and out on the previous one — only one is ever visible */
-.dock-dot{
-  width:11px;height:11px;flex:0 0 11px;border-radius:50%;
-  background:#29936F;
-  opacity:0;transform:scale(.4);
-  transition:opacity .3s ease,transform .3s ease;
-}
-.dock .dock-row button.active .dock-dot{opacity:1;transform:scale(1)}
-.dock .badge{
-  position:absolute;top:calc(50% - 26px);right:calc(50% - 22px);
-  background:#29936F;color:#fff;
-  font-size:10.5px;font-weight:800;line-height:1;
-  min-width:18px;height:18px;padding:0 5px;border-radius:99px;
-  display:grid;place-items:center;
-}
-/* the raised centre button: perfectly circular, botanical
-   green in every state, centred exactly on the pill's top
-   edge and sitting in the notch the mask carves for it */
-.dock .dock-center{
-  position:absolute;z-index:2;
-  left:50%;top:calc(var(--notch-cy) - var(--fab)/2);
-  transform:translateX(-50%);
-  width:var(--fab);height:var(--fab);
-  min-height:var(--fab);
-  border-radius:50%;
-  background:#29936F;color:#ffffff;
-  border:none;
-  display:grid;place-items:center;
-  padding:0;
-  box-shadow:0 12px 24px rgba(41,147,111,.35),0 3px 8px rgba(41,147,111,.25);
-  transition:transform .12s ease,background .3s ease;
-}
-.dock .dock-center svg{width:42px;height:42px}
-/* the centre button never follows the side tabs' active styling:
-   green background and white icon whichever destination is active */
-.dock .dock-center.active{background:#29936F;color:#ffffff}
-.dock .dock-center:active{transform:translateX(-50%) scale(.93)}
-.dock .dock-center:focus-visible{outline:3px solid #29936F;outline-offset:3px}
-.dock .dock-row button:focus-visible{outline:3px solid #29936F;outline-offset:-3px}
-/* room at the end of the portal so the floating pill never
-   covers the last content, and toasts clear the pill */
-.shell{padding-bottom:158px}
-.toast{bottom:146px}
-
-/* mobile: the pill takes 90–94% of the screen width and the
-   proportions scale down together — the centre button stays
-   perfectly centred and the notch stays a true circle */
-@media(max-width:640px){
-  .dock{
-    --fab:70px;
-    --notch-r:44px;
-    --notch-cy:-8px;
-    width:min(94vw,calc(100% - 16px));
-    height:80px;
-    bottom:calc(12px + env(safe-area-inset-bottom,0px));
-  }
-  .dock-pill{border-radius:32px}
-  .dock-row{padding:4px 6px}
-  .dock .dock-row button svg{width:24px;height:24px;flex-basis:24px}
-  .dock .dock-center svg{width:32px;height:32px}
-  .dock-dot{width:9px;height:9px;flex-basis:9px}
-  .shell{padding-bottom:132px}
-  .toast{bottom:118px}
-}
-@media(prefers-reduced-motion:reduce){
-  .dock .dock-row button,.dock .dock-row button svg,.dock-dot,.dock .dock-center{transition:none}
 }
 
 /* ---------- per-item review: student side ---------- */
@@ -950,96 +716,4 @@ body.in-portal .dock{display:block}
 .sr-row-main .sr-row-reason{color:#7c1a14}
 #studentReviewApp .sr-card{margin:0 auto 20px}
 
-/* ============================================================
-   NAVBAR STABILITY — glitch fix (2026-11-20)
-   The dock looked like it glitched when moving between pages.
-   Three causes, none of them the pill's design, which is
-   unchanged (same white pill, notch, green centre button,
-   sizes and colours as the section above):
-   1. The dock flipped display:none → block the instant the
-      portal opened, popping in at full opacity while the page
-      itself was still fading/sliding in over 340ms. It now
-      runs one short entrance animation in step with the page
-      transition, so bar and page arrive together.
-   2. Pages and views have different heights, so the vertical
-      scrollbar came and went between them; a fixed bar centred
-      with left:50% shifted sideways by half the scrollbar
-      width each time. scrollbar-gutter:stable reserves the
-      scrollbar's space on every page, so the centre never
-      moves.
-   3. The pill's shadow was a drop-shadow FILTER over a MASKED
-      element — the most expensive paint a browser does — and
-      it repainted on every frame of the page-slide animation,
-      flickering on phones. It is now an ordinary box-shadow
-      (same soft look; the mask still cuts the notch out of it),
-      and the dock sits on its own composited layer
-      (translateZ(0) + will-change) so page animations never
-      repaint it at all.
-   ============================================================ */
 html{scrollbar-gutter:stable}
-.dock{transform:translateX(-50%) translateZ(0);will-change:transform}
-.dock-pill{filter:none;box-shadow:0 14px 28px rgba(23,43,34,.14)}
-@keyframes dockIn{from{opacity:0;transform:translateX(-50%) translateY(12px) translateZ(0)}to{opacity:1;transform:translateX(-50%) translateY(0) translateZ(0)}}
-body.in-portal .dock{animation:dockIn .3s ease-out}
-@media(prefers-reduced-motion:reduce){
-  body.in-portal .dock{animation:none}
-}
-
-/* ============================================================
-   GREEN BUBBLE — always on the active page (2026-11-20)
-   This section supersedes the active-state rules above. The
-   green bubble always sits on the active page and follows it:
-   one green circle rides on the pill's top edge, centred over
-   the active destination and carrying that destination's icon
-   in white. showView in app.js sets data-active-view on the
-   dock; these rules do everything else — the bubble's column
-   positions are fixed fractions of the pill (the same calc
-   shape for every stop, so the left transition glides), and
-   no JavaScript ever measures the bar, so following the
-   active page cannot reintroduce the old glitch. The active
-   destination's own icon steps aside (the bubble carries it)
-   and its dot stays hidden — the bubble is the indicator.
-   On the Application page the raised centre button itself is
-   the green bubble, so the travelling bubble glides to the
-   centre and fades into it; the centre button stays on top
-   while the bubble passes.
-   ============================================================ */
-.dock .dock-center{z-index:3}
-.dock .badge{z-index:4}
-.dock-bubble{
-  position:absolute;top:0;left:calc(10px + (100% - 20px)*.1);
-  transform:translate(-50%,-50%) scale(1);
-  width:56px;height:56px;border-radius:50%;
-  background:#29936F;color:#ffffff;
-  display:grid;place-items:center;
-  z-index:2;pointer-events:none;
-  box-shadow:0 10px 20px rgba(41,147,111,.35),0 3px 8px rgba(41,147,111,.25);
-  transition:left .45s cubic-bezier(.65,0,.25,1.08),opacity .25s ease,transform .25s ease;
-}
-.dock[data-active-view="home"] .dock-bubble{left:calc(10px + (100% - 20px)*.1);opacity:1}
-.dock[data-active-view="bank"] .dock-bubble{left:calc(10px + (100% - 20px)*.3);opacity:1}
-.dock[data-active-view="application"] .dock-bubble{left:calc(10px + (100% - 20px)*.5);opacity:0;transform:translate(-50%,-50%) scale(.5)}
-.dock[data-active-view="notices"] .dock-bubble{left:calc(10px + (100% - 20px)*.7);opacity:1}
-.dock[data-active-view="me"] .dock-bubble{left:calc(10px + (100% - 20px)*.9);opacity:1}
-.dock-bubble .bubble-ic{display:none;width:24px;height:24px}
-.dock-bubble .bubble-ic svg{width:100%;height:100%;display:block}
-.dock[data-active-view="home"] .bubble-ic[data-view="home"]{display:block}
-.dock[data-active-view="bank"] .bubble-ic[data-view="bank"]{display:block}
-.dock[data-active-view="notices"] .bubble-ic[data-view="notices"]{display:block}
-.dock[data-active-view="me"] .bubble-ic[data-view="me"]{display:block}
-/* the bubble carries the active icon, so the copy inside the
-   pill steps aside and the dot stays hidden */
-.dock .dock-row button.active svg{visibility:hidden}
-.dock .dock-row button.active .dock-dot{opacity:0;transform:scale(.4)}
-@media(max-width:640px){
-  .dock-bubble{width:48px;height:48px;left:calc(6px + (100% - 12px)*.1)}
-  .dock[data-active-view="home"] .dock-bubble{left:calc(6px + (100% - 12px)*.1)}
-  .dock[data-active-view="bank"] .dock-bubble{left:calc(6px + (100% - 12px)*.3)}
-  .dock[data-active-view="application"] .dock-bubble{left:calc(6px + (100% - 12px)*.5)}
-  .dock[data-active-view="notices"] .dock-bubble{left:calc(6px + (100% - 12px)*.7)}
-  .dock[data-active-view="me"] .dock-bubble{left:calc(6px + (100% - 12px)*.9)}
-  .dock-bubble .bubble-ic{width:21px;height:21px}
-}
-@media(prefers-reduced-motion:reduce){
-  .dock-bubble{transition:none}
-}

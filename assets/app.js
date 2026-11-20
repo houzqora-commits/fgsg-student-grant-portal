@@ -1,7 +1,7 @@
 /* ============================================================
    FGSG — core app logic
    Data lists, page routing (landing / auth / app), auth tabs,
-   dock navigation, multi-step application form and uploads.
+   multi-step application form and uploads.
    Loaded first; liveness.js and payment.js build on this.
    ============================================================ */
 
@@ -256,12 +256,7 @@ function renderSerial(){
 /* ---------- page routing: landing / auth / app are separate pages ----------
    Page changes slide sideways in the direction of travel: a
    later page comes in from the right, going back comes in from
-   the left. The navbar is universal: ONE dock element at body
-   level, outside every page, inherited by all of them — a page
-   switch never rebuilds or re-animates it, so it cannot blink
-   or lag. It belongs to the portal, so goPage shows it only
-   while the portal page is open (body.in-portal); there is no
-   bottom navbar on the landing or auth pages. */
+   the left. */
 var currentPageName='landing';
 var PAGE_ORDER={landing:0,auth:1,app:2,admin:3};
 var VIEW_ORDER={home:0,bank:1,application:2,notices:3,me:4};
@@ -296,10 +291,6 @@ function goPage(page,authTab){
   var prevPage=currentPageName;
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById('page-'+page); if(el) el.classList.add('active');
-  /* the universal dock lives outside the pages; only its
-     visibility follows the current page — the element itself
-     and its position are never touched */
-  document.body.classList.toggle('in-portal',page==='app');
   if(el && prevPage!==page) slideIn(el,(PAGE_ORDER[page]<PAGE_ORDER[prevPage])?'back':'fwd');
   currentPageName=page;
   if(page==='auth' && authTab) switchAuthTab(authTab);
@@ -316,21 +307,8 @@ function switchAuthTab(name){
 }
 /* authLogin / authSignup / authForgot / authLogout live in
    auth.js, backed by Supabase Auth (FGSGAuth). */
-/* ---------- the green bubble follows the active view ----------
-   The green bubble always sits on the active page: showView
-   below only sets the dock's data-active-view attribute (a
-   discrete state, never a measurement) and CSS moves the
-   bubble to that column and swaps its icon — see the GREEN
-   BUBBLE section at the end of styles.css. On the Application
-   view the raised centre button itself is the bubble, so the
-   bubble fades into it. An earlier design measured the dock
-   with getBoundingClientRect on every switch — layout work on
-   the exact frames the user is watching — and jittered; this
-   one does zero measurement, so the bar cannot jitter, lag
-   or re-place itself mid-transition. */
-
 /* view switching — the incoming view slides in from the side
-   it sits on in the dock */
+   it sits on in VIEW_ORDER */
 var currentViewName='home';
 function showView(name){
   if(name!=='application' && typeof liveRunning!=='undefined' && liveRunning && typeof liveReset==='function'){ liveReset(); }
@@ -339,13 +317,9 @@ function showView(name){
   var el=document.getElementById('view-'+name); if(el) el.classList.add('active');
   if(el && prevView!==name) slideIn(el,(VIEW_ORDER[name]<VIEW_ORDER[prevView])?'back':'fwd');
   currentViewName=name;
-  document.querySelectorAll('.dock button').forEach(function(b){b.classList.toggle('active',b.dataset.view===name)});
-  var dockEl=document.querySelector('.dock');
-  if(dockEl) dockEl.setAttribute('data-active-view',name);
   if(typeof renderGrantState==='function') renderGrantState();
   if(name==='me') renderProfile();
 }
-document.querySelectorAll('.dock button').forEach(function(b){b.addEventListener('click',function(){showView(b.dataset.view);});});
 
 /* multi-step form — Step 1 is the start screen (no login
    re-confirmation: the user is already signed in), so the

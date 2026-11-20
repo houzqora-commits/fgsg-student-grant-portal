@@ -92,7 +92,6 @@ function maybeOpenDashboard(){
 }
 function enterAdminPage(){
   document.body.classList.add('in-admin');
-  document.body.classList.remove('in-portal');
   if (typeof goPage === 'function') goPage('admin');
   else {
     document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });

@@ -2,12 +2,11 @@
    FGSG — Admin panel (#/admin only)
    Separate from the student portal: its own login screen and
    dashboard, in the same black / white / Nigerian-green system.
-   Loaded after styles.css. The student dock, header and footer
-   are hidden while the admin page is open (body.in-admin).
+   Loaded after styles.css. The student header and footer are
+   hidden while the admin page is open (body.in-admin).
    ============================================================ */
 body.in-admin header.site,
-body.in-admin footer,
-body.in-admin .dock{display:none !important}
+body.in-admin footer{display:none !important}
 #page-admin{background:#EEEEEE;color:#0b0d0b;min-height:100vh}
 .admin-wrap{max-width:1100px;margin:0 auto;padding:36px 20px 64px}
 

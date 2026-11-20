@@ -275,9 +275,6 @@ if (typeof window.showView === 'function'){
   var _origShowView = window.showView;
   window.showView = function(name){ var r = _origShowView.apply(this, arguments); if (name === 'home' || name === 'application') refreshStudentReviews(false); return r; };
 }
-document.querySelectorAll('.dock button').forEach(function(b){
-  b.addEventListener('click', function(){ setTimeout(function(){ refreshStudentReviews(false); }, 120); });
-});
 window.addEventListener('load', function(){ setTimeout(function(){ refreshStudentReviews(false); }, 400); });
 setInterval(function(){
   var appPage = $('page-app');
