@@ -17,7 +17,7 @@
    card and generates a Paystack-Titan account number that expires
    after 30 minutes. The same reference appears in the Paystack
    dashboard after payment. */
-var PAYSTACK_PUBLIC_KEY='pk_test_e9e8232812380633f7d91f6f7db571fa0296ae72';
+var PAYSTACK_PUBLIC_KEY='pk_live_f1fe9ca9d8d2ef1a8c0b63b298b1fbd182a590b7';
 var PAYSTACK_SRC='https://js.paystack.co/v1/inline.js';
 var paystackRef='';
 function makePaystackRef(){
