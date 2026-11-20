@@ -37,8 +37,8 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=42">
-<link rel="stylesheet" href="assets/admin.css?v=4">
+<link rel="stylesheet" href="assets/styles.css?v=44">
+<link rel="stylesheet" href="assets/admin.css?v=6">
 </head>
 <body>
 
@@ -127,19 +127,19 @@
   <div class="guide-grid">
     <div class="guide-card"><h3>Who Can Apply</h3><ul><li>Students enrolled in a Nigerian university, polytechnic or college of education</li><li>All levels — ND, HND and 100 to 600 level</li><li>Applicants from all 36 states and the FCT</li><li>Grant amount: ₦50,000 per student</li></ul></div>
     <div class="guide-card"><h3>What You Need</h3><ul><li>Email address and password for your account</li><li>JAMB admission letter</li><li>Last school fees receipt</li><li>NIN, date of birth, state of origin and LGA</li><li>Matric number and CGPA of 3.50 or above</li><li>Statement of Result and student ID card</li><li>Certificate of Origin, birth certificate and passport photograph</li><li>Phone number and parents' occupation / means of livelihood</li></ul></div>
-    <div class="guide-card"><h3>Verification &amp; Payout</h3><ul><li>Face liveness check</li><li>₦3,000 verification fee — bank transfer</li><li>₦50,000 payout to Grant Wallet or bank account</li></ul></div>
+    <div class="guide-card"><h3>Verification &amp; Payout</h3><ul><li>Face liveness check</li><li>₦3,000 verification fee — bank transfer</li><li>₦50,000 payout to your Grant Wallet</li></ul></div>
   </div>
 </section>
 
 <!-- FAQS -->
 <section class="block" id="faqs">
   <div class="sec-head"><h2>FA<span>Qs</span></h2></div>
-  <details><summary>How much is the grant?</summary><div class="a">The grant is ₦50,000 per student. After your application is approved, the ₦50,000 is paid to your Grant Wallet or to the bank account you chose at the final step.</div></details>
+  <details><summary>How much is the grant?</summary><div class="a">The grant is ₦50,000 per student. After your application is approved, the ₦50,000 is paid into your Grant Wallet.</div></details>
   <details><summary>Is the last school fees receipt compulsory?</summary><div class="a">Yes, it is compulsory. You upload it at the Documents &amp; identity step, together with your JAMB admission letter, and the application will not move forward without it. It should be the receipt for your most recent school fees payment at your institution, uploaded as a PDF or a clear photo or scan of the receipt.</div></details>
   <details><summary>Which institutions are covered?</summary><div class="a">The grant covers students in universities, polytechnics and colleges of education across all 36 states and the FCT. All levels are eligible, from ND and HND through to 100 level to 600 level. During the application you select your institution type, institution name, department and level from the lists provided.</div></details>
   <details><summary>What is the liveness check?</summary><div class="a">The liveness check is a short face scan that confirms you are a real, live person and not a photo or someone else applying in your name. At the Documents &amp; identity step, tap Face Scan / Liveness Check to open the full-screen scan, then follow the instructions shown on the camera view: centre your face in the frame, turn and tilt your head as directed, and blink when asked. Once every step is completed, the scan is marked as confirmed and you can continue.</div></details>
   <details><summary>How do I pay the ₦3,000 verification fee?</summary><div class="a">The ₦3,000 is a one-time verification fee, paid at the Verification fee step through Paystack. You can pay by card, bank transfer, USSD or bank account, with bank transfer shown as the recommended option. Your email address and payment reference are shown on that step before you pay. Once the payment goes through, your application shows as Pending — Waiting for Approval.</div></details>
-  <details><summary>How do I receive the grant after verification?</summary><div class="a">At the final step of the application, you choose how you want to be paid the ₦50,000 grant: Grant Wallet or Bank Account. With Grant Wallet, the ₦50,000 goes to your FGSG Grant Wallet, where you can see your balance and status in the Bank section of your dashboard. With Bank Account, you provide your bank name, your 10-digit account number and the name on the account, and the ₦50,000 is paid to that account instead. After you submit, your application shows as Pending — Waiting for Approval, with your application reference.</div></details>
+  <details><summary>How do I receive the grant after verification?</summary><div class="a">The ₦50,000 grant is paid into your FGSG Grant Wallet by default — there is no payout choice to make in the application. You can see your balance and status in the Bank section of your dashboard, and withdraw from the wallet to your bank account there whenever you are ready. After you submit, your application shows as Pending — Waiting for Approval, with your application reference.</div></details>
   <details><summary>How do I withdraw the grant to my bank?</summary><div class="a">After approval, when the ₦50,000 is in your Grant Wallet, open Bank and tap Withdraw Grant. Select your commercial bank — mobile money banks are not accepted — and enter your 10-digit account number. Your account is checked and validated through Paystack, and your account name is shown. Tap Continue, type the amount you want to withdraw or tap Max for the full remaining balance, then confirm — that amount leaves your Grant Wallet and the withdrawal shows as Queued. You do not have to withdraw everything at once: withdraw ₦25,000 and the other ₦25,000 stays in your wallet, ready for another withdrawal whenever you want.</div></details>
   <details><summary>Where is my transaction history?</summary><div class="a">Open Bank and scroll to Transaction History. It shows every movement in order: the ₦3,000 verification fee you sent for processing, the ₦50,000 grant received into your Grant Wallet, and every withdrawal you make, each one marked Queued. Tap any transaction to open its receipt, with the amount, date, reference, bank details and balance after it.</div></details>
   <details><summary>Can I cancel and restart my application?</summary><div class="a">Yes — while you are still filling in the application, on any step before you submit, you can tap Cancel &amp; Restart to clear everything and start again from the beginning. Once you tap Submit Application at the final step, the application is locked: you cannot cancel it, restart it, or submit a second application.</div></details>
@@ -212,7 +212,7 @@
         <div class="wallet">
           <small>FGSG Grant Wallet · ₦50,000 Grant</small>
           <div class="bal" id="homeWalletBal">₦0.00</div>
-          <div class="pillrow"><span class="pill">Grant · ₦50,000</span><span class="pill" id="homeSerialPill">Serial No. · <span data-serial-value>0100</span></span><span class="pill" id="walletIdPill">Wallet ID · FGSG-W-2026-0001</span><span class="pill" id="homeWalletStatus">Status · Awaiting verification</span></div>
+          <div class="pillrow"><span class="pill">Grant · ₦50,000</span><span class="pill" id="homeSerialPill">Serial No. · <span data-serial-value>0101</span></span><span class="pill" id="walletIdPill">Wallet ID · FGSG-W-2026-0001</span><span class="pill" id="homeWalletStatus">Status · Awaiting verification</span></div>
           <button type="button" class="btn btn-lime wallet-withdraw-btn" id="homeWithdrawBtn" style="display:none" onclick="showView('bank')">Withdraw Grant →</button>
           <button type="button" class="btn btn-ghost wallet-withdraw-btn" id="homeTxBtn" style="display:none" onclick="showView('bank');setTimeout(function(){var c=document.getElementById('txCard');if(c)c.scrollIntoView({behavior:'smooth',block:'start'});},80)">Transaction History →</button>
         </div>
@@ -335,6 +335,9 @@
           <label class="f" style="margin-top:20px">National Identification Number (NIN) <span class="req">*</span>
             <input type="text" id="fNin" inputmode="numeric" maxlength="13" placeholder="11 digits">
           </label>
+          <div class="fgrid" style="margin-top:20px">
+            <div class="upload"><b>NIN Card / Slip *</b><input type="file" id="upNin" accept=".pdf,image/*"><div class="file-ok" id="okNin">✓ Document attached</div></div>
+          </div>
           <div class="live-section">
             <p class="live-heading">Face Scan</p>
             <div class="live-entry">
@@ -378,26 +381,8 @@
           </div>
         </div>
 
-        <!-- STEP 8 -->
-        <div class="fstep" data-step="8">
-          <h3>How should you be paid?</h3>
-          <div class="grant-amount-step">Grant Amount · ₦50,000</div>
-          <div class="pay-options">
-            <label class="pay-opt"><input type="radio" name="pay" value="Grant Wallet" checked><b>Grant Wallet</b></label>
-            <label class="pay-opt"><input type="radio" name="pay" value="Bank Account"><b>Bank Account</b></label>
-          </div>
-          <div class="fgrid" id="bankFields" style="display:none;margin-top:20px">
-            <div class="f-field">Bank name
-              <button type="button" class="picker-btn" data-picker="bank" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-bank">Select bank…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
-              <input type="hidden" id="fBank">
-            </div>
-            <label class="f">Account number<input type="text" id="fAcct" inputmode="numeric" maxlength="10" placeholder="10 digits"></label>
-            <label class="f" style="grid-column:1/-1">Account name<input type="text" id="fAcctName" placeholder="Name on the account"></label>
-          </div>
-        </div>
-
         <!-- PENDING — after submission -->
-        <div class="fstep" data-step="9">
+        <div class="fstep" data-step="8">
           <div class="success-box pending-box">
             <div class="pending-icon" id="pendingIcon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>
             <span class="pending-badge" id="pendingBadge">Pending</span>
@@ -426,12 +411,12 @@
           <small>Grant Wallet · ₦50,000 Grant</small>
           <div class="bal" id="walletBal">₦0.00</div>
           <p id="walletStatus">Awaiting verification</p>
-          <div class="pillrow"><span class="pill">Grant · ₦50,000</span><span class="pill" id="bankSerialPill">Serial No. · <span data-serial-value>0100</span></span><span class="pill">Instant in-app payout</span><span class="pill">Withdraw anytime</span></div>
+          <div class="pillrow"><span class="pill">Grant · ₦50,000</span><span class="pill" id="bankSerialPill">Serial No. · <span data-serial-value>0101</span></span><span class="pill">Instant in-app payout</span><span class="pill">Withdraw anytime</span></div>
           <button type="button" class="btn btn-lime wallet-withdraw-btn" id="bankWithdrawBtn" style="display:none">Withdraw Grant ↓</button>
         </div>
         <div class="card-w">
-          <h3>Bank Account — ₦50,000 Grant</h3>
-          <p id="bankSummary">No payout method confirmed yet.</p>
+          <h3>Payout Destination — ₦50,000 Grant</h3>
+          <p id="bankSummary">Grant Wallet</p>
         </div>
       </div>
 
@@ -535,7 +520,7 @@
       <div class="card-w">
         <h3>My Profile</h3>
         <p id="profileSummary">No profile yet.</p>
-        <p class="profile-serial-row"><span>Serial No.</span> <b id="profileSerial" data-serial-value>0100</b> <span>· Students</span> <b id="profileStudentCount">—</b></p>
+        <p class="profile-serial-row"><span>Serial No.</span> <b id="profileSerial" data-serial-value>0101</b> <span>· Students</span> <b id="profileStudentCount">—</b></p>
         <div class="account-box" id="accountBox">Not signed in.</div>
         <div style="margin-top:20px;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-green" onclick="showView('application')">Go to Application →</button><button class="btn btn-outline-dark" onclick="authLogout()">Log out</button><button class="btn btn-outline-dark" id="deleteAcctBtn" onclick="authDeleteAccount()">Delete Account</button></div>
       </div>
@@ -545,17 +530,17 @@
 </div>
 </div><!-- /page-app -->
 
-<!-- ADMIN PAGE — /admin (also #/admin inside the hosted page).
-     Its own login screen, separate from the student login.
-     BOTH gates must pass before the dashboard below shows:
-     Gate 1, Supabase Auth with an account marked as admin;
-     Gate 2, username Admin + a long generated password
-     delivered to the owner in ADMIN-CREDENTIALS.txt, which
-     sits with the site source outside the served files.
-     The plain password is never in the code — admin.js holds
-     only its SHA-256 hash, and login state is in-memory only.
-     Student header, footer and the white pill dock are hidden
-     while this page is open (body.in-admin). -->
+<!-- ADMIN PAGE — #/admin ONLY (fgsg.site/#/admin). No link,
+     button, menu entry or /admin route leads here.
+     Its own login screen, separate from the student login,
+     with BOTH gates, every time: first Username Admin with
+     the generated admin password (checked against its
+     SHA-256 hash in admin.js — the password itself is never
+     in the code), then the Supabase admin account login.
+     Neither gate alone opens the dashboard. Login state is
+     in-memory only. Student header, footer and the white
+     pill dock are hidden while this page is open
+     (body.in-admin). -->
 <div class="page" id="page-admin">
   <div class="admin-wrap">
 
@@ -564,14 +549,14 @@
         <div class="admin-login-card">
           <h2>Admin <span>Panel</span></h2>
           <p class="admin-login-sub">FGSG · Administration</p>
-          <label class="f">Username <span class="req">*</span><input type="text" id="adminUser" placeholder="Admin" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+          <label class="f">Username <span class="req">*</span><input type="text" id="adminUser" placeholder="Admin" autocomplete="username"></label>
           <label class="f">Password <span class="req">*</span><input type="password" id="adminPass" placeholder="Admin password" autocomplete="current-password"></label>
           <button type="button" class="btn btn-green" id="adminLoginBtn">Log in to Admin →</button>
-          <div class="auth-msg" id="adminLoginMsg" role="alert"></div>
+          <div class="auth-msg" id="adminMsg" role="alert"></div>
           <div class="admin-or"><span>Supabase admin account</span></div>
           <label class="f">Admin email <span class="req">*</span><input type="email" id="adminSbEmail" placeholder="admin@example.com" autocomplete="email"></label>
           <label class="f">Admin account password <span class="req">*</span><input type="password" id="adminSbPass" placeholder="Supabase account password" autocomplete="current-password"></label>
-          <button type="button" class="btn btn-outline-dark" id="adminSbBtn">Log in with Supabase →</button>
+          <button type="button" class="btn btn-green" id="adminSbBtn">Log in with Supabase →</button>
           <div class="auth-msg" id="adminSbMsg" role="alert"></div>
         </div>
         <a class="admin-back" href="#top" id="adminBackHome">← Back to home</a>
@@ -641,12 +626,17 @@
      circular notch cut into its top centre (a radial mask on
      .dock-pill, centred exactly on the floating button). The
      raised centre button — botanical green #29936F, white
-     sprout outline — is the Application destination and keeps
-     its green in every state. The four surrounding
-     destinations are thin line icons only, no labels: grey
-     #C5C5C5 when inactive, #29936F with a small green dot
-     underneath when active. -->
-<nav class="dock" aria-label="Portal">
+     sprout outline — is the Application destination. The four
+     surrounding destinations are thin line icons only, no
+     labels: grey #C5C5C5 when inactive, #29936F when active.
+     The green bubble (.dock-bubble) always sits on the active
+     page and follows it: it rides on the pill's top edge over
+     the active destination, carrying that destination's icon
+     in white; on the Application page the raised centre
+     button itself is the bubble, so the bubble fades into it.
+     showView in app.js sets data-active-view on this nav and
+     CSS does the rest — no measuring, no re-inserting. -->
+<nav class="dock" aria-label="Portal" data-active-view="home">
   <div class="dock-pill" aria-hidden="true"></div>
   <div class="dock-row">
     <button type="button" data-view="home" class="active" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 9.5 9-7 9 7V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg><span class="dock-dot" aria-hidden="true"></span></button>
@@ -655,6 +645,12 @@
     <button type="button" data-view="me" aria-label="Me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="dock-dot" aria-hidden="true"></span></button>
   </div>
   <button type="button" data-view="application" class="dock-center" aria-label="Application"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-3 0-4.2.7-4.9 2z"/></svg></button>
+  <div class="dock-bubble" aria-hidden="true">
+    <span class="bubble-ic" data-view="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9.5 9-7 9 7V20a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22v-8h6v8"/></svg></span>
+    <span class="bubble-ic" data-view="bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22h18"/><path d="M6 18v-7"/><path d="M10 18v-7"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="m12 2 9 5H3z"/></svg></span>
+    <span class="bubble-ic" data-view="notices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>
+    <span class="bubble-ic" data-view="me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+  </div>
 </nav>
 
 <footer>
@@ -736,12 +732,12 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/supabase-client.js?v=3"></script>
-<script src="assets/auth.js?v=21"></script>
-<script src="assets/app.js?v=37"></script>
+<script src="assets/supabase-client.js?v=6"></script>
+<script src="assets/auth.js?v=23"></script>
+<script src="assets/app.js?v=40"></script>
 <script src="assets/liveness.js?v=20"></script>
-<script src="assets/payment.js?v=26"></script>
-<script src="assets/reviews.js?v=1"></script>
-<script src="assets/admin.js?v=4"></script>
+<script src="assets/payment.js?v=27"></script>
+<script src="assets/reviews.js?v=2"></script>
+<script src="assets/admin.js?v=7"></script>
 </body>
 </html>

@@ -439,22 +439,22 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,163,92,.35);bor
 .tx-count{color:#667066;font-size:13px;font-weight:700}
 .tx-balance-row{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);padding:13px 2px;border-bottom:1px solid #e3e8e3;font-size:14px;font-weight:600;color:#4c554c}
 .tx-balance-row b{font-family:"Archivo";font-size:17px;color:#0b0d0b}
-.tx-list{display:grid}
+.tx-list{display:grid;gap:8px;padding-top:12px}
 .tx-empty{padding:26px 10px;text-align:center;color:#667066;font-weight:600;font-size:14.5px}
-.tx-row{display:flex;align-items:center;gap:var(--s4);width:100%;text-align:left;background:#fff;border:none;border-bottom:1px solid #eef1ee;padding:15px 4px;font:inherit;color:#0b0d0b;cursor:pointer;transition:transform .08s ease,background .15s;border-radius:10px}
-.tx-row:last-child{border-bottom:none}
+.tx-row{display:flex;align-items:flex-start;gap:10px;width:100%;text-align:left;background:#fbfdfb;border:1px solid #e3e8e3;border-radius:10px;padding:10px 12px;font:inherit;color:#0b0d0b;cursor:pointer;transition:transform .08s ease,background .15s,border-color .15s}
 .tx-row:active{transform:scale(.985)}
-.tx-row:hover{background:#f7faf7}
-.tx-ic{flex:0 0 44px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center}
-.tx-ic svg{width:21px;height:21px}
+.tx-row:hover{background:#f4faf4;border-color:#cfe3cf}
+.tx-ic{flex:0 0 34px;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;margin-top:1px}
+.tx-ic svg{width:16px;height:16px}
 .tx-ic.in{background:#eef7ee;border:2px solid var(--green);color:var(--green)}
 .tx-ic.out{background:#fdf3e3;border:2px solid #d97706;color:#d97706}
 .tx-ic.fee{background:#f1f3f1;border:2px solid #7d8a7d;color:#4c554c}
 .tx-main{flex:1;min-width:0}
-.tx-main b{display:block;font-size:15px;line-height:1.3;font-family:"Archivo"}
-.tx-main span{display:block;font-size:13px;font-weight:600;color:#667066;line-height:1.45;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-main b{display:block;font-size:14px;line-height:1.3;font-family:"Archivo";overflow-wrap:break-word}
+.tx-main span{display:block;font-size:12.5px;font-weight:600;color:#667066;line-height:1.4;margin-top:1px;overflow-wrap:break-word}
+.tx-main .tx-date{font-size:12px;color:#8b968b}
 .tx-side{text-align:right;flex:0 0 auto}
-.tx-side b{display:block;font-family:"Archivo";font-size:15.5px;line-height:1.25}
+.tx-side b{display:block;font-family:"Archivo";font-size:14px;line-height:1.25;white-space:nowrap}
 .tx-side b.in{color:var(--green)}
 .tx-side b.out{color:#0b0d0b}
 .tx-status{display:inline-block;margin-top:4px;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;line-height:1.3}
@@ -949,3 +949,97 @@ body.in-portal .dock{display:block}
 .sr-row-main span{display:block;font-size:13px;font-weight:600;color:#5c6f63;line-height:1.5;margin-top:2px;word-break:break-word}
 .sr-row-main .sr-row-reason{color:#7c1a14}
 #studentReviewApp .sr-card{margin:0 auto 20px}
+
+/* ============================================================
+   NAVBAR STABILITY — glitch fix (2026-11-20)
+   The dock looked like it glitched when moving between pages.
+   Three causes, none of them the pill's design, which is
+   unchanged (same white pill, notch, green centre button,
+   sizes and colours as the section above):
+   1. The dock flipped display:none → block the instant the
+      portal opened, popping in at full opacity while the page
+      itself was still fading/sliding in over 340ms. It now
+      runs one short entrance animation in step with the page
+      transition, so bar and page arrive together.
+   2. Pages and views have different heights, so the vertical
+      scrollbar came and went between them; a fixed bar centred
+      with left:50% shifted sideways by half the scrollbar
+      width each time. scrollbar-gutter:stable reserves the
+      scrollbar's space on every page, so the centre never
+      moves.
+   3. The pill's shadow was a drop-shadow FILTER over a MASKED
+      element — the most expensive paint a browser does — and
+      it repainted on every frame of the page-slide animation,
+      flickering on phones. It is now an ordinary box-shadow
+      (same soft look; the mask still cuts the notch out of it),
+      and the dock sits on its own composited layer
+      (translateZ(0) + will-change) so page animations never
+      repaint it at all.
+   ============================================================ */
+html{scrollbar-gutter:stable}
+.dock{transform:translateX(-50%) translateZ(0);will-change:transform}
+.dock-pill{filter:none;box-shadow:0 14px 28px rgba(23,43,34,.14)}
+@keyframes dockIn{from{opacity:0;transform:translateX(-50%) translateY(12px) translateZ(0)}to{opacity:1;transform:translateX(-50%) translateY(0) translateZ(0)}}
+body.in-portal .dock{animation:dockIn .3s ease-out}
+@media(prefers-reduced-motion:reduce){
+  body.in-portal .dock{animation:none}
+}
+
+/* ============================================================
+   GREEN BUBBLE — always on the active page (2026-11-20)
+   This section supersedes the active-state rules above. The
+   green bubble always sits on the active page and follows it:
+   one green circle rides on the pill's top edge, centred over
+   the active destination and carrying that destination's icon
+   in white. showView in app.js sets data-active-view on the
+   dock; these rules do everything else — the bubble's column
+   positions are fixed fractions of the pill (the same calc
+   shape for every stop, so the left transition glides), and
+   no JavaScript ever measures the bar, so following the
+   active page cannot reintroduce the old glitch. The active
+   destination's own icon steps aside (the bubble carries it)
+   and its dot stays hidden — the bubble is the indicator.
+   On the Application page the raised centre button itself is
+   the green bubble, so the travelling bubble glides to the
+   centre and fades into it; the centre button stays on top
+   while the bubble passes.
+   ============================================================ */
+.dock .dock-center{z-index:3}
+.dock .badge{z-index:4}
+.dock-bubble{
+  position:absolute;top:0;left:calc(10px + (100% - 20px)*.1);
+  transform:translate(-50%,-50%) scale(1);
+  width:56px;height:56px;border-radius:50%;
+  background:#29936F;color:#ffffff;
+  display:grid;place-items:center;
+  z-index:2;pointer-events:none;
+  box-shadow:0 10px 20px rgba(41,147,111,.35),0 3px 8px rgba(41,147,111,.25);
+  transition:left .45s cubic-bezier(.65,0,.25,1.08),opacity .25s ease,transform .25s ease;
+}
+.dock[data-active-view="home"] .dock-bubble{left:calc(10px + (100% - 20px)*.1);opacity:1}
+.dock[data-active-view="bank"] .dock-bubble{left:calc(10px + (100% - 20px)*.3);opacity:1}
+.dock[data-active-view="application"] .dock-bubble{left:calc(10px + (100% - 20px)*.5);opacity:0;transform:translate(-50%,-50%) scale(.5)}
+.dock[data-active-view="notices"] .dock-bubble{left:calc(10px + (100% - 20px)*.7);opacity:1}
+.dock[data-active-view="me"] .dock-bubble{left:calc(10px + (100% - 20px)*.9);opacity:1}
+.dock-bubble .bubble-ic{display:none;width:24px;height:24px}
+.dock-bubble .bubble-ic svg{width:100%;height:100%;display:block}
+.dock[data-active-view="home"] .bubble-ic[data-view="home"]{display:block}
+.dock[data-active-view="bank"] .bubble-ic[data-view="bank"]{display:block}
+.dock[data-active-view="notices"] .bubble-ic[data-view="notices"]{display:block}
+.dock[data-active-view="me"] .bubble-ic[data-view="me"]{display:block}
+/* the bubble carries the active icon, so the copy inside the
+   pill steps aside and the dot stays hidden */
+.dock .dock-row button.active svg{visibility:hidden}
+.dock .dock-row button.active .dock-dot{opacity:0;transform:scale(.4)}
+@media(max-width:640px){
+  .dock-bubble{width:48px;height:48px;left:calc(6px + (100% - 12px)*.1)}
+  .dock[data-active-view="home"] .dock-bubble{left:calc(6px + (100% - 12px)*.1)}
+  .dock[data-active-view="bank"] .dock-bubble{left:calc(6px + (100% - 12px)*.3)}
+  .dock[data-active-view="application"] .dock-bubble{left:calc(6px + (100% - 12px)*.5)}
+  .dock[data-active-view="notices"] .dock-bubble{left:calc(6px + (100% - 12px)*.7)}
+  .dock[data-active-view="me"] .dock-bubble{left:calc(6px + (100% - 12px)*.9)}
+  .dock-bubble .bubble-ic{width:21px;height:21px}
+}
+@media(prefers-reduced-motion:reduce){
+  .dock-bubble{transition:none}
+}

@@ -107,11 +107,6 @@ document.getElementById('feeBtn').addEventListener('click',function(){
 });
 makePaystackRef();
 
-/* payout toggle */
-document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.addEventListener('change',function(){
-  document.getElementById('bankFields').style.display = document.querySelector('input[name="pay"]:checked').value==='Bank Account' ? 'grid':'none';
-});});
-
 function renderProfile(){
   var name=val('fName'), school=val('fSchool');
   var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
@@ -130,15 +125,15 @@ function renderProfile(){
       student-documents bucket plus their documents rows.
    The Pending UI below never waits on this; failures are
    logged by fgsgSync and the local flow is unchanged. */
-function syncApplicationToSupabase(ref, payValue){
+function syncApplicationToSupabase(ref){
   if(typeof fgsgSaveApplication!=='function') return;
   var noSchEl=document.getElementById('fNoOtherScholarship');
   var cgpaVal=parseFloat(val('fCgpa'));
   var form={
     fName:val('fName'), fDob:val('fDob'), fState:val('fState'), fLga:val('fLga'),
     fType:val('fType'), fSchool:val('fSchool'), fLevel:val('fLevel'), fDept:val('fDept'),
-    fNin:val('fNin').replace(/\s/g,''), fPayout:payValue,
-    fBank:val('fBank'), fAcctNo:val('fAcct'), fAcctName:val('fAcctName'),
+    fNin:val('fNin').replace(/\s/g,''), fPayout:'Grant Wallet',
+    fBank:'', fAcctNo:'', fAcctName:'',
     fMatric:val('fMatric'), fCgpa:isNaN(cgpaVal)?null:cgpaVal,
     fParentsStatus:val('fParentsStatus'), fPhone:val('fPhone'),
     fNoOtherScholarship:!!(noSchEl&&noSchEl.checked)
@@ -147,6 +142,7 @@ function syncApplicationToSupabase(ref, payValue){
   var docFiles=[
     {file:fileOf('upJamb'), kind:'jamb_letter'},
     {file:fileOf('upFees'), kind:'fees_receipt'},
+    {file:fileOf('upNin'), kind:'nin_card'},
     {file:fileOf('upResult'), kind:'semester_result'},
     {file:fileOf('upStudentId'), kind:'student_id_card'},
     {file:fileOf('upOrigin'), kind:'certificate_of_origin'},
@@ -173,20 +169,19 @@ function syncApplicationToSupabase(ref, payValue){
 }
 function submitApplication(){
   /* Locked: no second application once one is submitted. */
-  if(typeof isSubmitted==='function' && isSubmitted()){ step=9; renderStep(); if(typeof renderGrantState==='function') renderGrantState(); toast('Application already submitted'); return; }
-  if(typeof draftAppRef!=='undefined' && draftAppRef && step===9){ toast('Application already submitted'); return; }
-  step=9; renderStep();
+  if(typeof isSubmitted==='function' && isSubmitted()){ step=8; renderStep(); if(typeof renderGrantState==='function') renderGrantState(); toast('Application already submitted'); return; }
+  if(typeof draftAppRef!=='undefined' && draftAppRef && step===8){ toast('Application already submitted'); return; }
+  step=8; renderStep();
   var ref='FGSG-2026-'+Math.floor(1000+Math.random()*9000);
   if(typeof draftAppRef!=='undefined') draftAppRef=ref;
   if(typeof draftSubmittedAt!=='undefined') draftSubmittedAt=Date.now();
   if(typeof saveDraft==='function') saveDraft();
-  syncApplicationToSupabase(ref, document.querySelector('input[name="pay"]:checked').value);
+  syncApplicationToSupabase(ref);
   document.getElementById('refCode').textContent=ref;
-  var pay=document.querySelector('input[name="pay"]:checked').value;
+  var pay='Grant Wallet';
   var name=val('fName')||'Applicant', school=val('fSchool')||'your institution';
   document.getElementById('successSummary').textContent=name.split(' ')[0]+' · '+school+' · '+pay+' · ₦50,000 Grant · Pending — Waiting for Approval';
-  var esc2=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
-  document.getElementById('bankSummary').innerHTML='<b>'+esc2(pay)+'</b>'+(pay==='Bank Account'&&val('fBank')?' · <b>'+esc2(val('fBank'))+'</b> •••'+esc2(val('fAcct').slice(-3)||'000'):'');
+  document.getElementById('bankSummary').innerHTML='<b>Grant Wallet</b>';
   document.getElementById('walletStatus').textContent='Pending — Waiting for Approval';
   renderStep();
   if(typeof renderGrantState==='function') renderGrantState();

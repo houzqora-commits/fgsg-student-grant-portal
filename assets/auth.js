@@ -224,7 +224,7 @@ function updateAuthUI(){
       try{ since=new Date(user.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }catch(e){}
       box.innerHTML='<b>'+escapeHtml(user.name)+'</b><br>'+escapeHtml(user.email)+
         (since?'<br><span>'+escapeHtml(since)+'</span>':'')+
-        '<br><span>Serial No. · </span><b data-serial-value>'+escapeHtml(window.__fgsgSerial||'0100')+'</b>';
+        '<br><span>Serial No. · </span><b data-serial-value>'+escapeHtml(window.__fgsgSerial||'0101')+'</b>';
     } else {
       box.innerHTML='Not signed in.';
     }

@@ -194,14 +194,14 @@ async function fgsgSaveWithdrawal(applicationId, amount, bankName, bankCode, acc
 
 /* ============================================================
    LIVE SERIAL NUMBER — from the live Supabase count, never a
-   hardcoded figure. Serials start at 0100: the first student
-   application in Supabase is 0100, the next is 0101, then
-   0102, and so on, in application order.
+   hardcoded figure. Serials start at 0101: the first student
+   application in Supabase is 0101, the next is 0102, then
+   0103, and so on, in application order.
    - A student who has applied gets the serial for their own
      position: a live count of applications submitted up to
-     theirs, so 1st → 0100, 2nd → 0101.
+     theirs, so 1st → 0101, 2nd → 0102.
    - A signed-in student who has not applied yet sees the
-     NEXT serial: 0100 + the live applications count.
+     NEXT serial: 0101 + the live applications count.
    The count is fetched fresh from Supabase on every call
    (dashboard load, login, submission). RLS scopes what an
    account can count to the rows it is allowed to see.
@@ -219,7 +219,7 @@ async function fgsgLiveStudentCount() {
   return null;
 }
 function fgsgFormatSerial(indexFromZero) {
-  return String(100 + Math.max(0, indexFromZero || 0)).padStart(4, '0');
+  return String(101 + Math.max(0, indexFromZero || 0)).padStart(4, '0');
 }
 function fgsgRenderSerial(serial, liveCount) {
   if (!serial) return;
@@ -254,7 +254,7 @@ async function fgsgRefreshSerial() {
         var upto = await fgsgDb.from('applications').select('*', { count: 'exact', head: true })
           .lte('created_at', own.data.created_at);
         if (!upto.error && typeof upto.count === 'number' && upto.count > 0) {
-          serial = fgsgFormatSerial(upto.count - 1); /* 1st application → index 0 → 0100 */
+          serial = fgsgFormatSerial(upto.count - 1); /* 1st application → index 0 → 0101 */
         } else {
           serial = fgsgFormatSerial(Math.max(0, total - 1));
         }
@@ -315,6 +315,7 @@ var FGSG_REVIEW_ITEMS = [
   {key:'parents_status', label:"Parents' status / occupation", kind:'field', column:'parents_financial_status', fieldId:'fParentsStatus', inputType:'text'},
   {key:'scholarship_confirmation', label:'No other government scholarship', kind:'field', column:'no_other_government_scholarship', fieldId:'fNoOtherScholarship', inputType:'text'},
   {key:'nin', label:'NIN', kind:'field', column:null, fieldId:'fNin', inputType:'text'},
+  {key:'doc_nin_card', label:'NIN Card / Slip', kind:'document', docKind:'nin_card', uploadId:'upNin'},
   {key:'payout', label:'Payout details', kind:'field', column:null, fieldId:null, inputType:'text'},
   {key:'doc_jamb_letter', label:'JAMB Admission Letter', kind:'document', docKind:'jamb_letter', uploadId:'upJamb'},
   {key:'doc_fees_receipt', label:'Last School Fees Receipt', kind:'document', docKind:'fees_receipt', uploadId:'upFees'},

@@ -1,33 +1,26 @@
 /* ============================================================
-   FGSG — Admin panel (/admin)
+   FGSG — Admin panel (#/admin only)
    Its own login screen, separate from the student login, then
-   the admin dashboard. Reachable at /admin — and, inside the
-   hosted Muse page where the address is an iframe URL, at
-   #/admin (both open this same page).
+   the admin dashboard. Reachable ONLY at #/admin
+   (fgsg.site/#/admin): there is no /admin route, and no link,
+   button or menu entry to this panel anywhere on the site —
+   typing #/admin is the only way in.
 
-   ADMIN LOGIN — BOTH gates must pass, neither alone opens
-   the dashboard (William's Admin correction, subordinated to
-   the original Supabase Auth requirement after the security
-   audit):
-   Gate 1 — Supabase Auth: a Supabase account marked as admin
-     (user_metadata is_admin / role = 'admin', app_metadata
-     role = 'admin', or a profiles row with is_admin = true /
-     role = 'admin'), verified by fgsgSupabaseAdminUser().
-     The application data itself is enforced server-side by
-     Supabase RLS under that session.
-   Gate 2 — Username exactly: Admin, plus a long generated
-     30-character password (rotated after earlier ones were
-     flagged). It is delivered ONLY in ADMIN-CREDENTIALS.txt,
-     which sits with the site source OUTSIDE the served files
-     (never under assets/, never on the public page).
-   - The plain password is NOT in this file. Only its SHA-256
-     hash is stored below; what is typed is hashed in the
-     browser and compared to that hash. All login state lives
-     in memory only — no browser-storage flag opens the
-     dashboard, so setting a storage key grants nothing, and
-     knowing the Admin password alone grants nothing either:
-     without Gate 1 there is no Supabase session and RLS
-     returns no student data.
+   ADMIN LOGIN — BOTH gates, every time, neither one alone
+   opens the dashboard:
+   Gate 1: Username Admin + the generated admin password.
+   The password itself is never in this file — only its
+   SHA-256 hash (ADMIN_PASS_SHA256 below); what is typed is
+   hashed in the browser and compared against that hash.
+   The password lives in ADMIN-CREDENTIALS.txt, which sits
+   with the site source outside the served website files.
+   Gate 2: a Supabase account marked as admin (user_metadata
+   is_admin / role = 'admin', app_metadata role = 'admin',
+   or a profiles row with is_admin = true / role = 'admin'),
+   verified by fgsgSupabaseAdminUser().
+   The application data itself is enforced server-side by
+   Supabase RLS under that session, and login state lives in
+   memory only — no browser-storage flag opens the dashboard.
 
    Data is live from Supabase (applications, documents,
    payments, withdrawals, transactions, profiles) through the
@@ -38,11 +31,14 @@
    ============================================================ */
 (function(){
 'use strict';
-var ADMIN_USER = 'Admin';
-var ADMIN_HASH = '87250b35dadf34a3334e5190a174ff40eabc41d3846b57bd5461bceb72c54f8d';
 var _adminAuthed = false; /* in-memory only, never stored */
-var _adminPwOk = false;   /* Gate 2 passed */
-var _sbAdminUser = null;  /* Gate 1: verified Supabase admin */
+var _gatePass = false;    /* gate 1: Username Admin + password */
+var _sbAdminUser = null;  /* gate 2: verified Supabase admin user */
+/* Gate 1 verifier: SHA-256 hash of the generated admin
+   password (the password itself is in ADMIN-CREDENTIALS.txt,
+   outside the served files — never in this code). */
+var ADMIN_USER = 'Admin';
+var ADMIN_PASS_SHA256 = '87250b35dadf34a3334e5190a174ff40eabc41d3846b57bd5461bceb72c54f8d';
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return (typeof escapeHtml === 'function') ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -56,74 +52,7 @@ function fmtDateTime(v){
   try { return new Date(v).toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'}) + ' · ' + new Date(v).toLocaleTimeString('en-GB', {hour:'numeric', minute:'2-digit'}); } catch(e){ return '—'; }
 }
 function statusOf(a){ return String((a && a.status) || 'pending').toLowerCase(); }
-function serialFor(index){ return String(100 + index).padStart(4, '0'); }
-
-/* ---------- SHA-256 (for the admin password check) ---------- */
-function sha256HexSubtle(text){
-  var enc = new TextEncoder().encode(text);
-  return crypto.subtle.digest('SHA-256', enc).then(function(buf){
-    return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ('00' + b.toString(16)).slice(-2); }).join('');
-  });
-}
-/* Synchronous fallback (public-domain style implementation),
-   used only if crypto.subtle is unavailable. */
-function sha256HexSync(ascii){
-  function rr(v, a){ return (v >>> a) | (v << (32 - a)); }
-  var maxWord = Math.pow(2, 32), result = '';
-  var words = [], asciiBitLength = ascii.length * 8;
-  var hash = sha256HexSync.h = sha256HexSync.h || [], k = sha256HexSync.k = sha256HexSync.k || [];
-  var primeCounter = k.length, isComposite = {};
-  for (var candidate = 2; primeCounter < 64; candidate++){
-    if (!isComposite[candidate]){
-      for (var i = 0; i < 313; i += candidate){ isComposite[i] = candidate; }
-      hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
-      k[primeCounter++] = (Math.pow(candidate, 1 / 3) * maxWord) | 0;
-    }
-  }
-  ascii += '\x80';
-  while (ascii.length % 64 - 56) ascii += '\x00';
-  for (var j = 0; j < ascii.length; j++){
-    var code = ascii.charCodeAt(j);
-    if (code >> 8) return sha256HexSubtle(ascii).then(function(){ return ''; });
-    words[j >> 2] |= code << ((3 - j) % 4) * 8;
-  }
-  words[words.length] = (asciiBitLength / maxWord) | 0;
-  words[words.length] = asciiBitLength;
-  for (var block = 0; block < words.length;){
-    var w = words.slice(block, block += 16), oldHash = hash;
-    hash = hash.slice(0, 8);
-    for (var t = 0; t < 64; t++){
-      var w15 = w[t - 15], w2 = w[t - 2];
-      var a = hash[0], e = hash[4];
-      var temp1 = hash[7]
-        + (rr(e, 6) ^ rr(e, 11) ^ rr(e, 25))
-        + ((e & hash[5]) ^ (~e & hash[6]))
-        + k[t]
-        + (w[t] = t < 16 ? w[t] : (w[t - 16] + (rr(w15, 7) ^ rr(w15, 18) ^ (w15 >>> 3)) + w[t - 7] + (rr(w2, 17) ^ rr(w2, 19) ^ (w2 >>> 10))) | 0);
-      var temp2 = (rr(a, 2) ^ rr(a, 13) ^ rr(a, 22)) + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
-      hash = [(temp1 + temp2) | 0].concat(hash);
-      hash[4] = (hash[4] + temp1) | 0;
-    }
-    for (var u = 0; u < 8; u++){ hash[u] = (hash[u] + oldHash[u]) | 0; }
-  }
-  for (var v = 0; v < 8; v++){
-    for (var b = 3; b + 1; b--){
-      var byte = (hash[v] >> (b * 8)) & 255;
-      result += (byte < 16 ? '0' : '') + byte.toString(16);
-    }
-  }
-  return Promise.resolve(result);
-}
-function hashPassword(text){
-  if (window.crypto && crypto.subtle && window.TextEncoder) return sha256HexSubtle(text);
-  return sha256HexSync(unescape(encodeURIComponent(text)));
-}
-function hashesEqual(a, b){
-  if (!a || !b || a.length !== b.length) return false;
-  var diff = 0;
-  for (var i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+function serialFor(index){ return String(101 + index).padStart(4, '0'); }
 
 /* ---------- Supabase admin marking (for a signed-in session) ---------- */
 async function fgsgSupabaseAdminUser(){
@@ -142,25 +71,18 @@ async function fgsgSupabaseAdminUser(){
   } catch(e){ return null; }
 }
 
-/* ---------- routing: /admin and #/admin ---------- */
+/* ---------- routing: #/admin is the ONLY way in ---------- */
 function isAdminRoute(){
-  try {
-    var p = window.location.pathname || '';
-    if (/(^|\/)admin\/?$/.test(p)) return true;
-    var h = window.location.hash || '';
-    if (h === '#/admin' || h === '#admin' || h.indexOf('#/admin') === 0) return true;
-    var s = window.location.search || '';
-    if (/[?&]admin(=1|=true)?(&|$)/.test(s)) return true;
-  } catch(e){}
+  try { return (window.location.hash || '') === '#/admin'; } catch(e){}
   return false;
 }
 function isAdminAuthed(){ return _adminAuthed === true; }
 function setAdminAuthed(on){ _adminAuthed = !!on; }
 /* The dashboard opens only when BOTH gates have passed in
-   this session: Gate 1 (verified Supabase admin) and Gate 2
-   (Admin username + generated password). */
+   this page session: gate 1 (Username Admin + password) and
+   gate 2 (verified Supabase admin session). */
 function maybeOpenDashboard(){
-  if (_adminPwOk && _sbAdminUser){
+  if (_gatePass && _sbAdminUser){
     setAdminAuthed(true);
     showDashboard();
     if (typeof toast === 'function') toast('Welcome, Admin');
@@ -180,13 +102,14 @@ function enterAdminPage(){
   if (isAdminAuthed()){ showDashboard(); }
   else {
     showAdminLogin();
-    /* Gate 1 check: a live Supabase session marked as admin
-       passes Gate 1; Gate 2 (Admin + password) is still
-       required on top of it before the dashboard opens. */
+    /* A live Supabase session marked as admin passes gate 2
+       on its own, but gate 1 (Username Admin + password) is
+       still required before the dashboard opens. */
     fgsgSupabaseAdminUser().then(function(u){
       if (u && document.body.classList.contains('in-admin')){
         _sbAdminUser = u;
-        setSbMsg('Supabase admin verified — now enter the Admin username and password above', true);
+        markSbPassed();
+        setSbMsg('Supabase admin account accepted — now complete the Username and password step above', true);
         maybeOpenDashboard();
       }
     });
@@ -197,14 +120,11 @@ function leaveAdminPage(){
   document.body.classList.remove('in-admin');
   if (typeof goPage === 'function') goPage('landing');
 }
-window.goAdmin = enterAdminPage;
+/* No goAdmin export and no link, button or menu entry anywhere:
+   the #/admin hash check in initAdmin below is the only way
+   this page can be opened. */
 
 /* ---------- login / logout ---------- */
-function setLoginMsg(msg, ok){
-  var el = $('adminLoginMsg'); if (!el) return;
-  el.textContent = msg || '';
-  el.className = 'auth-msg' + (msg ? (' show ' + (ok ? 'ok' : 'err')) : '');
-}
 function showAdminLogin(){
   var login = $('adminLoginView'), dash = $('adminDashView');
   if (login) login.style.display = 'block';
@@ -216,56 +136,94 @@ function showDashboard(){
   if (dash) dash.style.display = 'block';
   loadAdminData();
 }
-function adminLogin(){
-  var userEl = $('adminUser'), passEl = $('adminPass');
-  var username = userEl ? userEl.value : '';
-  var password = passEl ? passEl.value : '';
-  setLoginMsg('');
-  if (username !== ADMIN_USER){ setLoginMsg('Username is incorrect'); return; }
-  if (!password){ setLoginMsg('Enter the admin password'); return; }
-  var btn = $('adminLoginBtn');
-  if (btn){ btn.disabled = true; btn.textContent = 'Checking…'; }
-  hashPassword(password).then(function(hex){
-    if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
-    if (hashesEqual(String(hex || '').toLowerCase(), ADMIN_HASH)){
-      _adminPwOk = true;
-      if (passEl) passEl.value = '';
-      if (!maybeOpenDashboard()){
-        /* Gate 2 passed, Gate 1 still missing: check whether a
-           Supabase admin session already exists before asking
-           the owner to sign in below. */
-        fgsgSupabaseAdminUser().then(function(u){
-          if (u){ _sbAdminUser = u; maybeOpenDashboard(); }
-          else setLoginMsg('Admin password accepted — now sign in with the Supabase admin account below (Gate 2 of 2 done)', true);
-        });
-      }
-    } else {
-      setLoginMsg('Password is incorrect');
-    }
-  }).catch(function(){
-    if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
-    setLoginMsg('This browser could not verify the password — try again');
-  });
-}
 function adminLogout(){
   setAdminAuthed(false);
-  _adminPwOk = false; _sbAdminUser = null;
+  _gatePass = false;
+  _sbAdminUser = null;
   state.apps = []; state.reviews = []; state.selectedId = null;
   try { if (typeof fgsgDb !== 'undefined' && fgsgDb) fgsgDb.auth.signOut(); } catch(e){}
+  resetLoginGates();
   showAdminLogin();
   if (typeof toast === 'function') toast('Admin logged out');
 }
-/* Supabase Auth admin login (Gate 1): signs in with Supabase
-   and passes this gate ONLY if that account is marked as
-   admin (see fgsgSupabaseAdminUser). A student account is
-   rejected here. Gate 2 (Admin + password) is still required
-   on top before the dashboard opens. */
+/* ---------- gate 1: Username Admin + generated password ---------- */
+function setGateMsg(msg, ok){
+  var el = $('adminMsg'); if (!el) return;
+  el.textContent = msg || '';
+  el.className = 'auth-msg' + (msg ? (' show ' + (ok ? 'ok' : 'err')) : '');
+}
+function sha256Hex(text){
+  var enc = new TextEncoder().encode(text);
+  return crypto.subtle.digest('SHA-256', enc).then(function(buf){
+    return Array.prototype.map.call(new Uint8Array(buf), function(b){
+      return ('0' + b.toString(16)).slice(-2);
+    }).join('');
+  });
+}
+function markGatePassed(){
+  var u = $('adminUser'), p = $('adminPass'), b = $('adminLoginBtn');
+  if (u) u.disabled = true;
+  if (p) p.disabled = true;
+  if (b){ b.disabled = true; b.textContent = '✓ Username & password accepted'; }
+}
+function markSbPassed(){
+  var e = $('adminSbEmail'), p = $('adminSbPass'), b = $('adminSbBtn');
+  if (e) e.disabled = true;
+  if (p) p.disabled = true;
+  if (b){ b.disabled = true; b.textContent = '✓ Supabase admin accepted'; }
+}
+function resetLoginGates(){
+  var u = $('adminUser'), p = $('adminPass'), b = $('adminLoginBtn');
+  if (u){ u.disabled = false; }
+  if (p){ p.disabled = false; p.value = ''; }
+  if (b){ b.disabled = false; b.textContent = 'Log in to Admin →'; }
+  setGateMsg('');
+  var e = $('adminSbEmail'), sp = $('adminSbPass'), sb = $('adminSbBtn');
+  if (e) e.disabled = false;
+  if (sp){ sp.disabled = false; sp.value = ''; }
+  if (sb){ sb.disabled = false; sb.textContent = 'Log in with Supabase →'; }
+  setSbMsg('');
+}
+function adminGateLogin(){
+  if (_gatePass){ maybeOpenDashboard(); return; }
+  var userEl = $('adminUser'), passEl = $('adminPass');
+  var username = userEl ? userEl.value.trim() : '';
+  var password = passEl ? passEl.value : '';
+  setGateMsg('');
+  if (!username || !password){ setGateMsg('Enter the admin username and password'); return; }
+  if (username !== ADMIN_USER){ setGateMsg('Username or password is not correct'); return; }
+  if (!window.crypto || !crypto.subtle){ setGateMsg('A secure connection is needed to check the admin password — open this page over HTTPS and try again'); return; }
+  var btn = $('adminLoginBtn');
+  if (btn){ btn.disabled = true; btn.textContent = 'Checking…'; }
+  sha256Hex(password).then(function(hex){
+    if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
+    if (hex !== ADMIN_PASS_SHA256){
+      setGateMsg('Username or password is not correct');
+      return;
+    }
+    if (passEl) passEl.value = '';
+    _gatePass = true;
+    markGatePassed();
+    if (!maybeOpenDashboard()){
+      setGateMsg('Username and password accepted — now sign in with the Supabase admin account below', true);
+    }
+  }).catch(function(){
+    if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
+    setGateMsg('The admin password could not be checked — try again');
+  });
+}
+/* ---------- gate 2: Supabase Auth admin login ----------
+   Signs in with Supabase and passes this gate ONLY if that
+   account is marked as admin (see fgsgSupabaseAdminUser).
+   A student account is rejected here. The dashboard still
+   needs gate 1 as well. */
 function setSbMsg(msg, ok){
   var el = $('adminSbMsg'); if (!el) return;
   el.textContent = msg || '';
   el.className = 'auth-msg' + (msg ? (' show ' + (ok ? 'ok' : 'err')) : '');
 }
 function adminSupabaseLogin(){
+  if (_sbAdminUser){ maybeOpenDashboard(); return; }
   var emailEl = $('adminSbEmail'), passEl = $('adminSbPass');
   var email = emailEl ? emailEl.value.trim() : '';
   var password = passEl ? passEl.value : '';
@@ -285,8 +243,9 @@ function adminSupabaseLogin(){
     }
     if (passEl) passEl.value = '';
     _sbAdminUser = adminUser;
+    markSbPassed();
     if (!maybeOpenDashboard()){
-      setSbMsg('Supabase admin verified — now enter the Admin username and password above (Gate 1 of 2 done)', true);
+      setSbMsg('Supabase admin account accepted — now complete the Username and password step above', true);
     }
   }).catch(function(err){
     if (btn){ btn.disabled = false; btn.textContent = 'Log in with Supabase →'; }
@@ -731,12 +690,12 @@ async function setApplicationStatus(app, newStatus){
 
 /* ---------- wiring ---------- */
 function initAdmin(){
-  var loginBtn = $('adminLoginBtn');
-  if (loginBtn) loginBtn.addEventListener('click', adminLogin);
-  var pass = $('adminPass');
-  if (pass) pass.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); adminLogin(); } });
-  var user = $('adminUser');
-  if (user) user.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); adminLogin(); } });
+  var gateBtn = $('adminLoginBtn');
+  if (gateBtn) gateBtn.addEventListener('click', adminGateLogin);
+  ['adminUser', 'adminPass'].forEach(function(id){
+    var el = $(id);
+    if (el) el.addEventListener('keydown', function(e){ if (e.key === 'Enter'){ e.preventDefault(); adminGateLogin(); } });
+  });
   var sbBtn = $('adminSbBtn');
   if (sbBtn) sbBtn.addEventListener('click', adminSupabaseLogin);
   var sbPass = $('adminSbPass');

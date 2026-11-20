@@ -67,7 +67,6 @@ var PICKER_DEFS={
   level:{title:'Level',input:'fLevel',text:'pickText-level',placeholder:'Select…',search:'Search levels…',options:function(){return ['ND 1','ND 2','HND 1','HND 2','100 Level','200 Level','300 Level','400 Level','500 Level','600 Level'];}},
   school:{title:'Institution Name',input:'fSchool',text:'pickText-school',placeholder:'Select institution…',search:'Search institutions…',options:function(){return SCHOOLS;}},
   dept:{title:'Department',input:'fDept',text:'pickText-dept',placeholder:'Select department…',search:'Search departments…',custom:true,options:function(){return DEPARTMENTS;}},
-  bank:{title:'Bank Name',input:'fBank',text:'pickText-bank',placeholder:'Select bank…',search:'Search banks…',options:function(){return BANKS;}},
   wbank:{title:'Commercial Bank',input:'fWithdrawBank',text:'pickText-wbank',placeholder:'Select commercial bank…',search:'Search commercial banks…',options:function(){return COMMERCIAL_BANKS;}}
 };
 var pickerKey=null;
@@ -234,13 +233,13 @@ function renderWalletId(){
   if(el) el.textContent='Wallet ID · '+getOrCreateWalletId();
   renderSerial();
 }
-/* ---------- Serial No.: LIVE from Supabase, starting at 0100 ----------
+/* ---------- Serial No.: LIVE from Supabase, starting at 0101 ----------
    The serial is never a hardcoded or random number here: it is
    fetched fresh from Supabase by fgsgRefreshSerial() in
    supabase-client.js (live applications count, in order, first
-   student 0100, next 0101, then 0102…). This function only
+   student 0101, next 0102, then 0103…). This function only
    throttles the refresh and paints the last live value; the
-   starting placeholder 0100 in the markup is the first serial
+   starting placeholder 0101 in the markup is the first serial
    itself, shown until the first live count lands. */
 var _serialRefreshAt=0;
 function renderSerial(){
@@ -298,14 +297,13 @@ function goPage(page,authTab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   var el=document.getElementById('page-'+page); if(el) el.classList.add('active');
   /* the universal dock lives outside the pages; only its
-     visibility follows the current page — the element itself,
-     its position and its sliding circle are never touched */
+     visibility follows the current page — the element itself
+     and its position are never touched */
   document.body.classList.toggle('in-portal',page==='app');
   if(el && prevPage!==page) slideIn(el,(PAGE_ORDER[page]<PAGE_ORDER[prevPage])?'back':'fwd');
   currentPageName=page;
   if(page==='auth' && authTab) switchAuthTab(authTab);
   window.scrollTo({top:0});
-  if(page==='app'){ requestAnimationFrame(function(){syncNavBubble();}); setTimeout(function(){syncNavBubble(true);},380); }
 }
 function goLandingAnchor(e,id){
   e.preventDefault(); goPage('landing');
@@ -318,42 +316,18 @@ function switchAuthTab(name){
 }
 /* authLogin / authSignup / authForgot / authLogout live in
    auth.js, backed by Supabase Auth (FGSGAuth). */
-/* ---------- sliding active tab ----------
-   The portal dock carries a green circle holding the active
-   tab's icon, sitting on top of the pill — straddling its top
-   edge, in a depression carved into the pill where it sits —
-   while the tab's label stays in the pill underneath it. Tap
-   another tab and the circle glides along the top of the pill
-   to where you tapped — the animation from the reference
-   navbars. Every tab is treated the same, the middle
-   Application tab included. */
-function placeBubble(nav,bubble,btn,centre,instant){
-  if(!nav||!bubble) return;
-  var target=btn||centre; if(!target) return;
-  var nr=nav.getBoundingClientRect(), tr=target.getBoundingClientRect();
-  if(!nr.width||!tr.width) return;
-  var cx=tr.left+tr.width/2-nr.left;
-  if(instant) bubble.classList.add('no-anim');
-  bubble.style.left=(cx-bubble.offsetWidth/2)+'px';
-  if(btn){
-    var svg=btn.querySelector('svg');
-    if(svg) bubble.innerHTML=svg.outerHTML;
-    bubble.classList.remove('bubble-off');
-  } else {
-    bubble.classList.add('bubble-off');
-  }
-  if(instant){ void bubble.offsetWidth; bubble.classList.remove('no-anim'); }
-}
-function syncNavBubble(instant){
-  var useInstant= instant===true || !syncNavBubble._ready;
-  var dock=document.querySelector('.dock'), db=document.getElementById('dockBubble');
-  if(dock&&db){
-    placeBubble(dock,db,dock.querySelector('.dock-row button.active'),null,useInstant);
-  }
-  syncNavBubble._ready=true;
-}
-window.addEventListener('resize',function(){ syncNavBubble(true); });
-window.addEventListener('load',function(){ setTimeout(function(){ syncNavBubble(true); },60); });
+/* ---------- the green bubble follows the active view ----------
+   The green bubble always sits on the active page: showView
+   below only sets the dock's data-active-view attribute (a
+   discrete state, never a measurement) and CSS moves the
+   bubble to that column and swaps its icon — see the GREEN
+   BUBBLE section at the end of styles.css. On the Application
+   view the raised centre button itself is the bubble, so the
+   bubble fades into it. An earlier design measured the dock
+   with getBoundingClientRect on every switch — layout work on
+   the exact frames the user is watching — and jittered; this
+   one does zero measurement, so the bar cannot jitter, lag
+   or re-place itself mid-transition. */
 
 /* view switching — the incoming view slides in from the side
    it sits on in the dock */
@@ -366,7 +340,8 @@ function showView(name){
   if(el && prevView!==name) slideIn(el,(VIEW_ORDER[name]<VIEW_ORDER[prevView])?'back':'fwd');
   currentViewName=name;
   document.querySelectorAll('.dock button').forEach(function(b){b.classList.toggle('active',b.dataset.view===name)});
-  requestAnimationFrame(function(){ syncNavBubble(); });
+  var dockEl=document.querySelector('.dock');
+  if(dockEl) dockEl.setAttribute('data-active-view',name);
   if(typeof renderGrantState==='function') renderGrantState();
   if(name==='me') renderProfile();
 }
@@ -374,11 +349,13 @@ document.querySelectorAll('.dock button').forEach(function(b){b.addEventListener
 
 /* multi-step form — Step 1 is the start screen (no login
    re-confirmation: the user is already signed in), so the
-   counted form steps are Personal (2) through Payout (8),
-   with Academic (4) and Background (5) before Documents &
-   identity / liveness (6) and the verification fee (7). */
-var step=1, totalSteps=7, liveDone=false, feeDone=false, lastRenderedStep=null;
-var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Academic details',5:'Background details',6:'Documents & identity',7:'Verification fee — Paystack',8:'Choose payout',9:'Pending — Waiting for Approval'};
+   counted form steps are Personal (2) through the
+   verification fee (7), with Academic (4) and Background (5)
+   before Documents & identity / liveness (6). There is no
+   payout choice step: the grant goes to the Grant Wallet by
+   default, and Step 8 is the submitted / Pending screen. */
+var step=1, totalSteps=6, liveDone=false, feeDone=false, lastRenderedStep=null;
+var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Academic details',5:'Background details',6:'Documents & identity',7:'Verification fee — Paystack',8:'Pending — Waiting for Approval'};
 function renderStep(){
   document.querySelectorAll('.fstep').forEach(function(f){f.classList.toggle('active',+f.dataset.step===step)});
   /* steps slide in the direction of travel: Continue from the
@@ -392,7 +369,7 @@ function renderStep(){
     document.getElementById('stepTitle').textContent='Application — Start';
     document.getElementById('stepPct').textContent='0%';
     document.getElementById('pbar').style.width='0%';
-  } else if(step===9){
+  } else if(step===8){
     var approved7=(typeof isGrantApproved==='function')?isGrantApproved():false;
     document.getElementById('stepTitle').textContent=approved7?'Approved — Grant Credited':'Pending — Waiting for Approval';
     document.getElementById('stepPct').textContent='100%';
@@ -404,14 +381,14 @@ function renderStep(){
     document.getElementById('stepPct').textContent=pct+'%';
     document.getElementById('pbar').style.width=pct+'%';
   }
-  document.getElementById('backBtn').style.visibility= step===1||step===9 ? 'hidden':'visible';
-  document.getElementById('nextBtn').textContent= step===8 ? 'Submit Application ✓' : 'Continue →';
-  document.getElementById('formNav').style.display= step===1||step===9 ? 'none':'flex';
+  document.getElementById('backBtn').style.visibility= step===1||step===8 ? 'hidden':'visible';
+  document.getElementById('nextBtn').textContent= step===7 ? 'Submit Application ✓' : 'Continue →';
+  document.getElementById('formNav').style.display= step===1||step===8 ? 'none':'flex';
   /* Cancel & Restart: available on ANY step while the application
      is still being filled in (Steps 2–6, and Step 1 if a draft is
      already in progress). It locks ONLY after Submit — Step 7 /
      a submitted application can never be cancelled or restarted. */
-  var lockedRb=(typeof isSubmitted==='function'&&isSubmitted())||step===9;
+  var lockedRb=(typeof isSubmitted==='function'&&isSubmitted())||step===8;
   var hasProgressRb=step>1;
   if(!hasProgressRb){
     try{ hasProgressRb=typeof draftHasProgress==='function' && draftHasProgress(collectDraft()); }catch(e){}
@@ -481,28 +458,28 @@ function validateStep(){
     var noSch=document.getElementById('fNoOtherScholarship');
     if(!noSch || !noSch.checked){toast('Confirm you are not a beneficiary of any other government scholarship');return false;}
   }
-  if(step===6){ if(!document.getElementById('upJamb').files.length && !draftJambName){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length && !draftFeesName){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
+  if(step===6){ if(!document.getElementById('upJamb').files.length && !draftJambName){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length && !draftFeesName){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!document.getElementById('upNin').files.length && !draftNinName){toast('Attach your NIN card or slip');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
   if(step===7){ if(!feeDone){toast('Pay the ₦3,000 verification fee with Paystack to continue');return false;} }
   return true;
 }
 var startAppBtn=document.getElementById('startAppBtn');
 if(startAppBtn){ startAppBtn.addEventListener('click',function(){
-  if(isSubmitted()){ step=9; renderStep(); renderGrantState(); toast('Application already submitted'); return; }
+  if(isSubmitted()){ step=8; renderStep(); renderGrantState(); toast('Application already submitted'); return; }
   step=2; renderStep(); saveDraft();
   window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
 });}
 document.getElementById('nextBtn').addEventListener('click',function(){
-  if(step===9||isSubmitted()&&step>=9){ toast('Application already submitted'); return; }
-  if(step<8){ if(!validateStep())return; step++; renderStep(); saveDraft(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
-  else if(step===8){ submitApplication(); }
+  if(step===8||isSubmitted()&&step>=8){ toast('Application already submitted'); return; }
+  if(step<7){ if(!validateStep())return; step++; renderStep(); saveDraft(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
+  else if(step===7){ if(!validateStep())return; submitApplication(); }
 });
-document.getElementById('backBtn').addEventListener('click',function(){ if(step===9) return; if(step>1){step--;renderStep();saveDraft();} });
+document.getElementById('backBtn').addEventListener('click',function(){ if(step===8) return; if(step>1){step--;renderStep();saveDraft();} });
 
 /* uploads — the draft keeps the attached file names, because a page
    cannot refill a file input after a reload */
-var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upResult:'draftResultName',upStudentId:'draftStudentIdName',upOrigin:'draftOriginName',upBirth:'draftBirthName',upPassport:'draftPassportName'};
-[['upJamb','okJamb'],['upFees','okFees'],['upResult','okResult'],['upStudentId','okStudentId'],['upOrigin','okOrigin'],['upBirth','okBirth'],['upPassport','okPassport']].forEach(function(pair){
-  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; var varName=UPLOAD_DRAFT_VARS[pair[0]]; if(varName==='draftJambName') draftJambName=nm; else if(varName==='draftFeesName') draftFeesName=nm; else if(varName==='draftResultName') draftResultName=nm; else if(varName==='draftStudentIdName') draftStudentIdName=nm; else if(varName==='draftOriginName') draftOriginName=nm; else if(varName==='draftBirthName') draftBirthName=nm; else if(varName==='draftPassportName') draftPassportName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
+var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upNin:'draftNinName',upResult:'draftResultName',upStudentId:'draftStudentIdName',upOrigin:'draftOriginName',upBirth:'draftBirthName',upPassport:'draftPassportName'};
+[['upJamb','okJamb'],['upFees','okFees'],['upNin','okNin'],['upResult','okResult'],['upStudentId','okStudentId'],['upOrigin','okOrigin'],['upBirth','okBirth'],['upPassport','okPassport']].forEach(function(pair){
+  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; var varName=UPLOAD_DRAFT_VARS[pair[0]]; if(varName==='draftJambName') draftJambName=nm; else if(varName==='draftFeesName') draftFeesName=nm; else if(varName==='draftResultName') draftResultName=nm; else if(varName==='draftStudentIdName') draftStudentIdName=nm; else if(varName==='draftOriginName') draftOriginName=nm; else if(varName==='draftBirthName') draftBirthName=nm; else if(varName==='draftPassportName') draftPassportName=nm; else if(varName==='draftNinName') draftNinName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
 });
 
 /* ---------- application draft: progress saves at every step ----------
@@ -513,7 +490,7 @@ var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upResult:'d
    details filled in. Restart clears the draft for this account
    and returns the form to Step 1. The submitted application
    itself is saved to Supabase (payment.js / supabase-client.js). */
-var draftJambName='', draftFeesName='', draftResultName='', draftStudentIdName='', draftOriginName='', draftBirthName='', draftPassportName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
+var draftJambName='', draftFeesName='', draftNinName='', draftResultName='', draftStudentIdName='', draftOriginName='', draftBirthName='', draftPassportName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
 /* Background approval: after submission the application stays
    Pending with no timer shown anywhere. The submission time is
    kept silently in the draft; once the background wait has
@@ -768,7 +745,7 @@ function renderTxHistory(){
     var b=document.createElement('button'); b.type='button'; b.className='tx-row'; b.dataset.txId=tx.id;
     var sign=tx.dir==='in'?'+':(tx.dir==='out'?'−':'');
     b.innerHTML='<span class="tx-ic '+tx.dir+'">'+TX_ICONS[tx.dir]+'</span>'+
-      '<span class="tx-main"><b>'+escTx(tx.title)+'</b><span>'+escTx(tx.subtitle)+' · '+escTx(formatTxDate(tx.ts))+'</span></span>'+
+      '<span class="tx-main"><b>'+escTx(tx.title)+'</b><span>'+escTx(tx.subtitle)+'</span><span class="tx-date">'+escTx(formatTxDate(tx.ts))+'</span></span>'+
       '<span class="tx-side"><b class="'+tx.dir+'">'+sign+escTx(formatNairaAmt(tx.amount))+'</b><span class="tx-status '+tx.statusClass+'">'+escTx(tx.status)+'</span></span>'+
       '<span class="tx-chev" aria-hidden="true">›</span>';
     b.addEventListener('click',function(){ openReceipt(tx.id); });
@@ -893,7 +870,7 @@ function renderGrantState(){
       icon.classList.add('approved'); icon.innerHTML='✓';
       var sum=document.getElementById('successSummary');
       if(sum && sum.textContent.indexOf('Pending')>=0) sum.textContent=sum.textContent.replace('Pending — Waiting for Approval','Approved — Grant Credited');
-      if(step===9) document.getElementById('stepTitle').textContent='Approved — Grant Credited';
+      if(step===8) document.getElementById('stepTitle').textContent='Approved — Grant Credited';
     } else {
       badge.textContent='Pending'; badge.classList.remove('approved');
       title.textContent='Waiting for Approval';
@@ -913,13 +890,12 @@ function draftKey(){
   return 'fgsg_draft_v1_'+(e||'guest');
 }
 function draftHasProgress(d){
-  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName||d.matric||d.cgpa||d.resultName||d.studentIdName||d.originName||d.birthName||d.passportName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.liveDone||d.feeDone||d.jambName||d.feesName||d.ninName||d.matric||d.cgpa||d.resultName||d.studentIdName||d.originName||d.birthName||d.passportName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
 }
 function collectDraft(){
-  var payEl=document.querySelector('input[name="pay"]:checked');
   var wBankEl=document.getElementById('fWithdrawBank'), wAcctEl=document.getElementById('wAcct'), wAmtEl=document.getElementById('wAmount');
   var noSchEl=document.getElementById('fNoOtherScholarship');
-  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,studentIdName:draftStudentIdName,originName:draftOriginName,birthName:draftBirthName,passportName:draftPassportName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===9&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
+  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,studentIdName:draftStudentIdName,originName:draftOriginName,birthName:draftBirthName,passportName:draftPassportName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:'Grant Wallet',liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,ninName:draftNinName,appRef:draftAppRef,submitted:step===8&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
 }
 function saveDraft(){
   try{
@@ -941,14 +917,12 @@ function restoreDraft(){
   setField('fMatric',d.matric); setField('fCgpa',d.cgpa);
   setField('fParentsStatus',d.parentsStatus); setField('fPhone',d.phone);
   var noSchRestore=document.getElementById('fNoOtherScholarship'); if(noSchRestore) noSchRestore.checked=!!d.noOtherScholarship;
-  setField('fAcct',d.acct); setField('fAcctName',d.acctName);
   if(d.state) pickerSetValue('state',d.state);
   if(d.lga) pickerSetValue('lga',d.lga);
   if(d.type) pickerSetValue('type',d.type);
   if(d.level) pickerSetValue('level',d.level);
   if(d.school) pickerSetValue('school',d.school);
   if(d.dept) pickerSetValue('dept',d.dept);
-  if(d.bank) pickerSetValue('bank',d.bank);
   if(d.withdrawBank) pickerSetValue('wbank',d.withdrawBank);
   var wAcctRestore=document.getElementById('wAcct'); if(wAcctRestore && d.withdrawAcct) wAcctRestore.value=d.withdrawAcct;
   var wAmtRestore=document.getElementById('wAmount'); if(wAmtRestore && d.withdrawAmtText) wAmtRestore.value=d.withdrawAmtText;
@@ -973,14 +947,15 @@ function restoreDraft(){
      a saved name is never presented as freshly verified. The
      bank and account number stay filled in for re-verifying. */
   withdrawVerified=false; withdrawAcctName='';
-  var payVal=d.pay||'Grant Wallet';
-  document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value===payVal); });
-  document.getElementById('bankFields').style.display= payVal==='Bank Account' ? 'grid':'none';
-  draftJambName=d.jambName||''; draftFeesName=d.feesName||'';
+  /* Payout is always the Grant Wallet — older drafts that
+     saved a payout choice or bank details are ignored. */
+  var payVal='Grant Wallet';
+  draftJambName=d.jambName||''; draftFeesName=d.feesName||''; draftNinName=d.ninName||'';
   draftResultName=d.resultName||''; draftStudentIdName=d.studentIdName||'';
   draftOriginName=d.originName||''; draftBirthName=d.birthName||''; draftPassportName=d.passportName||'';
   if(draftJambName){ var okJ=document.getElementById('okJamb'); okJ.style.display='block'; okJ.textContent='✓ '+draftJambName+' attached'; }
   if(draftFeesName){ var okF=document.getElementById('okFees'); okF.style.display='block'; okF.textContent='✓ '+draftFeesName+' attached'; }
+  if(draftNinName){ var okN=document.getElementById('okNin'); if(okN){ okN.style.display='block'; okN.textContent='✓ '+draftNinName+' attached'; } }
   [['draftResultName','okResult'],['draftStudentIdName','okStudentId'],['draftOriginName','okOrigin'],['draftBirthName','okBirth'],['draftPassportName','okPassport']].forEach(function(pair){
     var nm=pair[0]==='draftResultName'?draftResultName:pair[0]==='draftStudentIdName'?draftStudentIdName:pair[0]==='draftOriginName'?draftOriginName:pair[0]==='draftBirthName'?draftBirthName:draftPassportName;
     if(nm){ var okEl=document.getElementById(pair[1]); if(okEl){ okEl.style.display='block'; okEl.textContent='✓ '+nm+' attached'; } }
@@ -996,18 +971,21 @@ function restoreDraft(){
     document.getElementById('refCode').textContent=draftAppRef;
     var nm=(d.name||'Applicant'), sc=(d.school||'your institution');
     document.getElementById('successSummary').textContent=nm.split(' ')[0]+' · '+sc+' · '+payVal+' · ₦50,000 Grant · Pending — Waiting for Approval';
-    var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
-    document.getElementById('bankSummary').innerHTML='<b>'+esc(payVal)+'</b>'+(payVal==='Bank Account'&&d.bank?' · <b>'+esc(d.bank)+'</b> •••'+esc((d.acct||'').slice(-3)||'000'):'');
+    document.getElementById('bankSummary').innerHTML='<b>Grant Wallet</b>';
     document.getElementById('walletStatus').textContent='Pending — Waiting for Approval';
   }
   step=Math.min(9,Math.max(1,+d.step||1));
   /* Drafts saved before Academic (4) and Background (5) were
      added used the old numbering — shift their later steps
-     forward so a reopened draft lands on the same screen. */
-  if(d.v!==2 && !d.submitted){ if(step===4) step=6; else if(step===5) step=7; else if(step===6) step=8; else if(step===7) step=9; }
+     forward so a reopened draft lands on the same screen.
+     Drafts saved while the payout choice was still Step 8
+     land on the fee step (7) if unsubmitted, and the old
+     submitted screen (9) is now Step 8. */
+  if(d.v!==2 && !d.submitted){ if(step===4) step=6; else if(step===5) step=7; else if(step===6) step=7; else if(step===7) step=8; }
+  else if(!d.submitted){ if(step===8) step=7; else if(step===9) step=8; }
   /* Locked: a submitted application always reopens on its
      submitted screen, never back on an editable step. */
-  if(d.submitted && draftAppRef) step=9;
+  if(d.submitted && draftAppRef) step=8;
   renderStep();
   renderGrantState();
   var note=document.getElementById('draftSaved'); if(note && draftHasProgress(d)) note.textContent='Saved ✓';
@@ -1030,29 +1008,27 @@ function restartApplication(){
   /* Locked ONLY after submission: a submitted application cannot
      be restarted, cancelled or replaced. Before submission — on
      any step — Cancel & Restart clears the draft and starts over. */
-  if(isSubmitted()||step===9){ toast('Application already submitted — it cannot be cancelled or restarted'); return; }
+  if(isSubmitted()||step===8){ toast('Application already submitted — it cannot be cancelled or restarted'); return; }
   if(!restartArmed){ setRestartArmed(true); return; }
   setRestartArmed(false);
   var btn=document.getElementById('restartAppBtn');
   try{ localStorage.removeItem(draftKey()); }catch(e){}
-  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fMatric','fCgpa','fParentsStatus','fPhone','fBank','fAcct','fAcctName','fWithdrawBank'].forEach(function(id){ setField(id,''); });
+  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fMatric','fCgpa','fParentsStatus','fPhone','fWithdrawBank'].forEach(function(id){ setField(id,''); });
   var noSchClear=document.getElementById('fNoOtherScholarship'); if(noSchClear) noSchClear.checked=false;
   var wAcctClear=document.getElementById('wAcct'); if(wAcctClear) wAcctClear.value='';
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
   withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; withdrawTotal=0; withdrawHistory=[]; withdrawJustQueued=false; draftFeePaidAt=0; draftFeeRef=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
   Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
-  draftJambName=''; draftFeesName=''; draftResultName=''; draftStudentIdName=''; draftOriginName=''; draftBirthName=''; draftPassportName=''; draftAppRef=''; draftSubmittedAt=0;
-  ['upJamb','upFees','upResult','upStudentId','upOrigin','upBirth','upPassport'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['okJamb','okFees','okResult','okStudentId','okOrigin','okBirth','okPassport'].forEach(function(id){ document.getElementById(id).style.display='none'; });
-  document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value==='Grant Wallet'); });
-  document.getElementById('bankFields').style.display='none';
+  draftJambName=''; draftFeesName=''; draftNinName=''; draftResultName=''; draftStudentIdName=''; draftOriginName=''; draftBirthName=''; draftPassportName=''; draftAppRef=''; draftSubmittedAt=0;
+  ['upJamb','upFees','upNin','upResult','upStudentId','upOrigin','upBirth','upPassport'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['okJamb','okFees','okNin','okResult','okStudentId','okOrigin','okBirth','okPassport'].forEach(function(id){ document.getElementById(id).style.display='none'; });
   liveDone=false; if(typeof liveReset==='function') liveReset();
   feeDone=false;
   var fb=document.getElementById('feeBtn'); fb.disabled=false; fb.textContent='Pay ₦3,000';
   var fp2=document.getElementById('feePending'); if(fp2) fp2.style.display='none';
   var fs=document.getElementById('feeStatus'); if(fs) fs.textContent='';
   document.getElementById('walletStatus').textContent='Awaiting verification';
-  var bs=document.getElementById('bankSummary'); if(bs) bs.textContent='No payout method confirmed yet.';
+  var bs=document.getElementById('bankSummary'); if(bs) bs.textContent='Grant Wallet';
   var note2=document.getElementById('draftSaved'); if(note2) note2.textContent='';
   step=1; renderStep();
   window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
