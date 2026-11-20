@@ -240,7 +240,6 @@ async function resubmitItem(key, btn, container){
       if (!value) throw new Error('Enter the corrected ' + def.label.toLowerCase());
       var patch = {};
       if (def.key === 'scholarship_confirmation') patch[def.column] = (value === 'true');
-      else if (def.key === 'cgpa'){ var n = parseFloat(value); patch[def.column] = isNaN(n) ? value : n; }
       else patch[def.column] = value;
       var up = await fgsgDb.from('applications').update(patch).eq('id', _myApp.id);
       if (up.error) throw up.error;

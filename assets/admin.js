@@ -514,7 +514,6 @@ function renderDetail(app){
     kv('Reference', app.reference) +
     kv('Full name', app.full_name) +
     kv('Matric / Reg. Number', app.matric_number) +
-    kv('CGPA', app.cgpa == null ? null : String(app.cgpa)) +
     kv('Date of birth', fmtDate(app.date_of_birth)) +
     kv('Phone number', app.phone_number) +
     kv('State of origin', app.state_of_origin) +

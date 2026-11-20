@@ -110,13 +110,13 @@ makePaystackRef();
 function renderProfile(){
   var name=val('fName'), school=val('fSchool');
   var esc=(typeof escapeHtml==='function')?escapeHtml:function(s){return String(s||'');};
-  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fMatric')?'<br>Matric No. · '+esc(val('fMatric')):'')+(val('fCgpa')?'<br>CGPA · '+esc(val('fCgpa')):'')+(val('fPhone')?'<br>'+esc(val('fPhone')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
+  if(name||school){ document.getElementById('profileSummary').innerHTML='<b>'+esc(name||'Applicant')+'</b>'+(school?'<br>'+esc(school):'')+(val('fDept')?'<br>'+esc(val('fDept')):'')+(val('fLevel')?'<br>'+esc(val('fLevel')):'')+(val('fMatric')?'<br>Matric No. · '+esc(val('fMatric')):'')+(val('fPhone')?'<br>'+esc(val('fPhone')):'')+(val('fState')?'<br>'+esc(val('fState'))+(val('fLga')?' · '+esc(val('fLga'))+' LGA':''):''); }
 }
 /* Mirror a submitted application to Supabase, in order:
    1) the applications row via fgsg_submit_application — the
       RPC encrypts the NIN server-side, only encrypted bytes
       are stored, and fgsgSaveApplication then writes the
-      Academic / Background fields (matric, CGPA, parents'
+      Academic / Background fields (matric, parents'
       status, phone, no-other-scholarship confirmation) onto
       that same applications row; 2) every uploaded file — JAMB
       letter, fees receipt, statement of result,
@@ -127,13 +127,12 @@ function renderProfile(){
 function syncApplicationToSupabase(ref){
   if(typeof fgsgSaveApplication!=='function') return;
   var noSchEl=document.getElementById('fNoOtherScholarship');
-  var cgpaVal=parseFloat(val('fCgpa'));
   var form={
     fName:val('fName'), fDob:val('fDob'), fState:val('fState'), fLga:val('fLga'),
     fType:val('fType'), fSchool:val('fSchool'), fLevel:val('fLevel'), fDept:val('fDept'),
     fNin:val('fNin').replace(/\s/g,''), fPayout:'Grant Wallet',
     fBank:'', fAcctNo:'', fAcctName:'',
-    fMatric:val('fMatric'), fCgpa:isNaN(cgpaVal)?null:cgpaVal,
+    fMatric:val('fMatric'),
     fParentsStatus:val('fParentsStatus'), fPhone:val('fPhone'),
     fNoOtherScholarship:!!(noSchEl&&noSchEl.checked)
   };

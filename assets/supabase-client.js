@@ -111,11 +111,10 @@ async function fgsgSaveApplication(form, reference) {
      document uploads travel separately as documents rows
      (semester_result,
      certificate_of_origin, birth_certificate). */
-  if (row && row.id && (form.fMatric || form.fCgpa !== undefined || form.fPhone || form.fParentsStatus)) {
+  if (row && row.id && (form.fMatric || form.fPhone || form.fParentsStatus)) {
     try {
       await fgsgDb.from('applications').update({
         matric_number: form.fMatric || null,
-        cgpa: (form.fCgpa === undefined ? null : form.fCgpa),
         phone_number: form.fPhone || null,
         parents_financial_status: form.fParentsStatus || null,
         no_other_government_scholarship: !!form.fNoOtherScholarship
@@ -310,7 +309,6 @@ var FGSG_REVIEW_ITEMS = [
   {key:'level', label:'Level', kind:'field', column:'level', fieldId:'fLevel', inputType:'text'},
   {key:'department', label:'Department', kind:'field', column:'department', fieldId:'fDept', inputType:'text'},
   {key:'matric_number', label:'Matric / Registration Number', kind:'field', column:'matric_number', fieldId:'fMatric', inputType:'text'},
-  {key:'cgpa', label:'CGPA', kind:'field', column:'cgpa', fieldId:'fCgpa', inputType:'text'},
   {key:'phone_number', label:'Phone number', kind:'field', column:'phone_number', fieldId:'fPhone', inputType:'tel'},
   {key:'parents_status', label:"Parents' status / occupation", kind:'field', column:'parents_financial_status', fieldId:'fParentsStatus', inputType:'text'},
   {key:'scholarship_confirmation', label:'No other government scholarship', kind:'field', column:'no_other_government_scholarship', fieldId:'fNoOtherScholarship', inputType:'text'},

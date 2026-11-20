@@ -424,10 +424,6 @@ function validateStep(){
   if(step===3){ if(!val('fType')||!val('fLevel')||!val('fSchool')||!val('fDept')){toast('Complete institution type, level, institution and department');return false;} }
   if(step===4){
     if(!val('fMatric')){toast('Enter your matric / student registration number');return false;}
-    var cgpa=parseFloat(val('fCgpa'));
-    if(isNaN(cgpa)){toast('Enter your CGPA');return false;}
-    if(cgpa>5){toast('CGPA cannot be more than 5.00');return false;}
-    if(cgpa<3.5){toast('CGPA must be at least 3.50 to apply');return false;}
     if(!document.getElementById('upResult').files.length && !draftResultName){toast('Attach your current semester result / statement of result');return false;}
   }
   if(step===5){
@@ -872,12 +868,12 @@ function draftKey(){
   return 'fgsg_draft_v1_'+(e||'guest');
 }
 function draftHasProgress(d){
-  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.liveDone||d.feeDone||d.jambName||d.feesName||d.ninName||d.matric||d.cgpa||d.resultName||d.originName||d.birthName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.liveDone||d.feeDone||d.jambName||d.feesName||d.ninName||d.matric||d.resultName||d.originName||d.birthName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
 }
 function collectDraft(){
   var wBankEl=document.getElementById('fWithdrawBank'), wAcctEl=document.getElementById('wAcct'), wAmtEl=document.getElementById('wAmount');
   var noSchEl=document.getElementById('fNoOtherScholarship');
-  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,originName:draftOriginName,birthName:draftBirthName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:'Grant Wallet',liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,ninName:draftNinName,appRef:draftAppRef,submitted:step===8&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
+  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),resultName:draftResultName,originName:draftOriginName,birthName:draftBirthName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:'Grant Wallet',liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,ninName:draftNinName,appRef:draftAppRef,submitted:step===8&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
 }
 function saveDraft(){
   try{
@@ -896,7 +892,7 @@ function restoreDraft(){
   try{ var raw=localStorage.getItem(key); if(raw) d=JSON.parse(raw); }catch(e){}
   if(!d) return;
   setField('fName',d.name); setField('fDob',d.dob); setField('fNin',d.nin);
-  setField('fMatric',d.matric); setField('fCgpa',d.cgpa);
+  setField('fMatric',d.matric);
   setField('fParentsStatus',d.parentsStatus); setField('fPhone',d.phone);
   var noSchRestore=document.getElementById('fNoOtherScholarship'); if(noSchRestore) noSchRestore.checked=!!d.noOtherScholarship;
   if(d.state) pickerSetValue('state',d.state);
@@ -996,7 +992,7 @@ function restartApplication(){
   setRestartArmed(false);
   var btn=document.getElementById('restartAppBtn');
   try{ localStorage.removeItem(draftKey()); }catch(e){}
-  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fMatric','fCgpa','fParentsStatus','fPhone','fWithdrawBank'].forEach(function(id){ setField(id,''); });
+  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fMatric','fParentsStatus','fPhone','fWithdrawBank'].forEach(function(id){ setField(id,''); });
   var noSchClear=document.getElementById('fNoOtherScholarship'); if(noSchClear) noSchClear.checked=false;
   var wAcctClear=document.getElementById('wAcct'); if(wAcctClear) wAcctClear.value='';
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
