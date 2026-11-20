@@ -36,7 +36,10 @@ function setFeeStatus(msg,ok){
 }
 function completePaystackPayment(ref){
   feeDone=true;
+  if(typeof draftFeePaidAt!=='undefined') draftFeePaidAt=Date.now();
+  if(typeof draftFeeRef!=='undefined') draftFeeRef=ref||'';
   if(typeof saveDraft==='function') saveDraft();
+  if(typeof renderTxHistory==='function') renderTxHistory();
   setFeeStatus('Payment received — Pending, waiting for approval · Ref: '+ref,true);
   document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000';
   var pending=document.getElementById('feePending');

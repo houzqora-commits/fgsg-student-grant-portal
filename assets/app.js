@@ -411,12 +411,28 @@ function isGrantApproved(){ return isSubmitted() && (Date.now()-draftSubmittedAt
    validation loading state, and the resolved account name is
    shown for confirmation before the withdrawal is sent. */
 var withdrawVerified=false, withdrawVerifying=false, withdrawDone=false, withdrawAcctName='', withdrawTimer=null, withdrawProcessingTimer=null, withdrawQueuedAmt=0;
-function resolvedWithdrawName(){
-  var n=val('fName');
-  if(!n && window.FGSGAuth && FGSGAuth.currentUser()) n=FGSGAuth.currentUser().name;
-  if(!n) n=val('fAcctName');
-  return String(n||'Verified Account Holder').toUpperCase();
+/* Partial withdrawals: the wallet keeps whatever is left.
+   withdrawTotal is everything withdrawn so far and
+   withdrawHistory is every withdrawal, in order — the balance
+   is always ₦50,000 minus withdrawTotal, and another withdrawal
+   can be made whenever a balance remains. */
+var withdrawTotal=0, withdrawHistory=[], withdrawJustQueued=false;
+var draftFeePaidAt=0, draftFeeRef='';
+/* Paystack bank codes for the commercial banks above. Account
+   validation is done by the server endpoint /api/resolve-account,
+   which holds the Paystack secret key — no secret ever appears
+   in this frontend code, and the account name shown is only ever
+   the name that endpoint returns. */
+var BANK_CODES={"Access Bank":"044","Citibank Nigeria":"023","Ecobank Nigeria":"050","Fidelity Bank":"070","First Bank of Nigeria":"011","First City Monument Bank (FCMB)":"214","Globus Bank":"00103","Guaranty Trust Bank (GTBank)":"058","Heritage Bank":"030","Jaiz Bank":"301","Keystone Bank":"082","Parallex Bank":"104","Polaris Bank":"076","Premium Trust Bank":"105","Providus Bank":"101","Stanbic IBTC Bank":"221","Standard Chartered Bank":"068","Sterling Bank":"232","SunTrust Bank":"100","TAJBank":"302","Titan Trust Bank":"102","Union Bank":"032","United Bank for Africa (UBA)":"033","Unity Bank":"215","Wema Bank":"035","Zenith Bank":"057"};
+function bankCodeFor(bank){ return BANK_CODES[bank]||''; }
+function remainingBalance(){ return isGrantApproved() ? Math.max(0,50000-(withdrawTotal||0)) : 0; }
+function formatMoneyFull(n){ return '₦'+(Number(n)||0).toLocaleString('en-NG')+'.00'; }
+function formatTxDate(ts){
+  if(!ts) return '—';
+  try{ return new Date(ts).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})+' · '+new Date(ts).toLocaleTimeString('en-GB',{hour:'numeric',minute:'2-digit'}); }
+  catch(e){ return '—'; }
 }
+function escTx(s){ return (typeof escapeHtml==='function')?escapeHtml(s):String(s||''); }
 function setWithdrawStatus(msg,kind){
   var st=document.getElementById('withdrawStatus'); if(!st) return;
   st.textContent=msg||''; st.className='withdraw-status'+(kind?' '+kind:'');
@@ -430,7 +446,9 @@ function setWithdrawAmountStatus(msg,kind){
   var st=document.getElementById('withdrawAmountStatus'); if(!st) return;
   st.textContent=msg||''; st.className='withdraw-status'+(kind?' '+kind:'');
 }
+var withdrawReqSeq=0;
 function resetWithdrawVerification(){
+  withdrawReqSeq++;
   if(withdrawTimer){ clearTimeout(withdrawTimer); withdrawTimer=null; }
   withdrawVerified=false; withdrawVerifying=false; withdrawAcctName='';
   var load=document.getElementById('withdrawLoading'); if(load) load.style.display='none';
@@ -438,20 +456,28 @@ function resetWithdrawVerification(){
   var conf=document.getElementById('withdrawConfirmBtn'); if(conf) conf.style.display='none';
   var amtBox=document.getElementById('withdrawAmountBox'); if(amtBox) amtBox.style.display='none';
   setWithdrawAmountStatus('');
-  var vb=document.getElementById('withdrawVerifyBtn'); if(vb) vb.style.display='inline-flex';
+  var vb=document.getElementById('withdrawVerifyBtn'); if(vb){ vb.style.display='inline-flex'; vb.textContent='Verify Account with Paystack'; }
   var sec=document.getElementById('withdrawSecure'); if(sec) sec.style.display='';
   setWithdrawStatus('');
 }
 function showWithdrawAmountStep(){
-  if(!withdrawVerified || withdrawDone) return;
+  if(!withdrawVerified || remainingBalance()<=0) return;
   var conf=document.getElementById('withdrawConfirmBtn'); if(conf) conf.style.display='none';
   var amtBox=document.getElementById('withdrawAmountBox'); if(amtBox) amtBox.style.display='block';
   setWithdrawAmountStatus('');
   var amt=document.getElementById('wAmount'); if(amt) setTimeout(function(){ amt.focus(); },60);
   if(typeof saveDraft==='function') saveDraft();
 }
+/* Real Paystack account validation, via the server only.
+   The browser POSTs {account_number, bank_code} to
+   /api/resolve-account; that endpoint calls Paystack with the
+   secret key held server-side and returns the account name.
+   The name shown here is ONLY the name that endpoint returns —
+   there is no fallback to the applicant's form name or any
+   other local name. If the endpoint is unavailable or returns
+   an error, an error is shown and the account stays unverified. */
 function verifyWithdrawAccount(auto){
-  if(withdrawDone || withdrawVerifying) return;
+  if(remainingBalance()<=0 || withdrawVerifying) return;
   var bankEl=document.getElementById('fWithdrawBank');
   var bank=bankEl?bankEl.value.trim():'';
   var acctEl=document.getElementById('wAcct');
@@ -460,34 +486,84 @@ function verifyWithdrawAccount(auto){
   if(!bank){ if(!auto){ toast('Select your commercial bank'); setWithdrawStatus('Select your commercial bank first','err'); } return; }
   if(COMMERCIAL_BANKS.indexOf(bank)<0){ setWithdrawStatus('That bank is not a commercial bank — select a commercial bank','err'); toast('Select a commercial bank'); return; }
   if(!/^\d{10}$/.test(acct)){ if(!auto || acct.length===10){ setWithdrawStatus('Enter your 10-digit account number','err'); if(!auto) toast('Enter your 10-digit account number'); } return; }
+  var bankCode=bankCodeFor(bank);
+  if(!bankCode){ setWithdrawStatus('That bank cannot be verified right now — select another commercial bank','err'); return; }
   resetWithdrawVerification();
+  var seq=withdrawReqSeq;
   withdrawVerifying=true;
   var vb2=document.getElementById('withdrawVerifyBtn'); if(vb2) vb2.style.display='none';
   var load=document.getElementById('withdrawLoading'); if(load) load.style.display='flex';
   var sec=document.getElementById('withdrawSecure'); if(sec) sec.style.display='none';
   setWithdrawStatus('');
   if(acctEl) acctEl.disabled=true;
-  withdrawTimer=setTimeout(function(){
-    withdrawTimer=null; withdrawVerifying=false;
+  function verifyFailed(msg){
+    if(seq!==withdrawReqSeq) return;
+    withdrawVerifying=false; withdrawVerified=false; withdrawAcctName='';
+    if(acctEl) acctEl.disabled=false;
+    if(load) load.style.display='none';
+    var res=document.getElementById('withdrawResult'); if(res) res.style.display='none';
+    var conf=document.getElementById('withdrawConfirmBtn'); if(conf) conf.style.display='none';
+    var vb3=document.getElementById('withdrawVerifyBtn'); if(vb3){ vb3.style.display='inline-flex'; vb3.textContent='Try Again — Verify Account with Paystack'; }
+    if(sec) sec.style.display='';
+    setWithdrawStatus(msg,'err');
+  }
+  var ctrl=(typeof AbortController!=='undefined')?new AbortController():null;
+  var timeoutId=ctrl?setTimeout(function(){ try{ctrl.abort();}catch(e){} },20000):null;
+  fetch('/api/resolve-account',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({account_number:acct,bank_code:bankCode}),
+    signal:ctrl?ctrl.signal:undefined
+  }).then(function(resp){
+    return resp.text().then(function(text){
+      var json=null;
+      try{ json=text?JSON.parse(text):null; }catch(e){}
+      if(!resp.ok){
+        var em=(json&&(json.message||json.error))||'';
+        throw new Error(em?('Verification failed: '+em):'Verification service returned an error ('+resp.status+')');
+      }
+      return json;
+    });
+  }).then(function(json){
+    if(timeoutId) clearTimeout(timeoutId);
+    if(seq!==withdrawReqSeq) return;
+    var data=(json&&json.data)?json.data:json;
+    var resolvedName=data?(data.account_name||data.accountName||''):'';
+    resolvedName=String(resolvedName||'').trim();
+    if(!resolvedName) throw new Error('Verification service did not return an account name');
+    withdrawVerifying=false;
     if(acctEl) acctEl.disabled=false;
     if(load) load.style.display='none';
     withdrawVerified=true;
-    withdrawAcctName=resolvedWithdrawName();
+    withdrawAcctName=resolvedName.toUpperCase();
     var nameEl=document.getElementById('withdrawAcctName'); if(nameEl) nameEl.textContent=withdrawAcctName;
     var metaEl=document.getElementById('withdrawAcctMeta'); if(metaEl) metaEl.textContent=bank+' · '+acct;
     var res=document.getElementById('withdrawResult'); if(res) res.style.display='flex';
     var conf=document.getElementById('withdrawConfirmBtn'); if(conf) conf.style.display='inline-flex';
     setWithdrawStatus('Account verified','ok');
     if(typeof saveDraft==='function') saveDraft();
-  },1900);
+  }).catch(function(err){
+    if(timeoutId) clearTimeout(timeoutId);
+    if(seq!==withdrawReqSeq) return;
+    var msg=(err && err.name==='AbortError')
+      ? 'Account verification timed out — check your connection and try again'
+      : 'Account could not be verified — '+(err&&err.message?err.message:'verification service is unavailable')+'. Check the bank and account number, then try again.';
+    verifyFailed(msg);
+  });
+}
+function makeWithdrawRef(){
+  return 'FGSG-WD-2026-'+Math.floor(1000+Math.random()*9000)+'-'+(withdrawHistory.length+1);
 }
 function queueWithdraw(){
-  if(!withdrawVerified || withdrawDone) return;
+  if(!withdrawVerified || remainingBalance()<=0) return;
+  var remaining=remainingBalance();
   var amount=withdrawAmountValue();
   if(!amount){ setWithdrawAmountStatus('Type the amount to withdraw','err'); toast('Type the amount to withdraw'); return; }
-  if(amount>50000){ setWithdrawAmountStatus('Amount cannot be more than ₦50,000','err'); toast('Amount cannot be more than ₦50,000'); return; }
+  if(amount>remaining){ setWithdrawAmountStatus('Amount cannot be more than your remaining balance of '+formatNairaAmt(remaining),'err'); toast('Amount cannot be more than '+formatNairaAmt(remaining)); return; }
   setWithdrawAmountStatus('');
   var bank=document.getElementById('fWithdrawBank').value.trim();
+  var acct=(document.getElementById('wAcct')?document.getElementById('wAcct').value:'').replace(/\D/g,'');
+  var nameAtQueue=withdrawAcctName;
   var proc=document.getElementById('withdrawProcessing');
   var procText=document.getElementById('withdrawProcessingText');
   if(procText) procText.textContent='Queueing '+formatNairaAmt(amount)+'…';
@@ -496,32 +572,144 @@ function queueWithdraw(){
   withdrawProcessingTimer=setTimeout(function(){
     withdrawProcessingTimer=null;
     if(proc) proc.style.display='none';
+    withdrawHistory.push({amount:amount,bank:bank,acct:acct,name:nameAtQueue,ts:Date.now(),ref:makeWithdrawRef()});
+    withdrawTotal=(withdrawTotal||0)+amount;
     withdrawQueuedAmt=amount;
-    withdrawDone=true;
+    withdrawDone=withdrawTotal>=50000;
+    withdrawJustQueued=true;
+    var amtEl=document.getElementById('wAmount'); if(amtEl) amtEl.value='';
     if(typeof saveDraft==='function') saveDraft();
     renderGrantState();
-    toast(formatNairaAmt(amount)+' queued');
+    toast(formatNairaAmt(amount)+' queued · '+formatNairaAmt(remainingBalance())+' left in wallet');
     var card=document.getElementById('withdrawCard'); if(card) card.scrollIntoView({behavior:'smooth',block:'center'});
   },1600);
 }
 function confirmWithdraw(){ queueWithdraw(); }
+/* ---------- Transaction history + receipts ----------
+   Every movement on the wallet, oldest first here and shown
+   newest first: the ₦3,000 verification fee sent for processing,
+   the ₦50,000 grant received, then every withdrawal. Tapping a
+   row opens its receipt. */
+function buildTransactions(){
+  var txs=[];
+  if(feeDone){
+    txs.push({id:'fee',kind:'fee',title:'Verification Fee Sent',subtitle:'Processing fee · Paystack',amount:3000,dir:'fee',status:'Completed',statusClass:'done',ts:draftFeePaidAt||draftSubmittedAt||0,ref:draftFeeRef||'',
+      rows:[['Type','Verification fee'],['Paid through','Paystack'],['Amount',formatMoneyFull(3000)],['Status','Completed'],['Date',formatTxDate(draftFeePaidAt||draftSubmittedAt||0)],['Reference',draftFeeRef||'—']],
+      note:'This one-time fee was sent for processing and verification of your application.'});
+  }
+  if(isGrantApproved()){
+    txs.push({id:'grant',kind:'grant',title:'Grant Received',subtitle:'Federal Government Student Grant',amount:50000,dir:'in',status:'Completed',statusClass:'done',ts:draftSubmittedAt+GRANT_WAIT_MS,ref:draftAppRef||'',balanceAfter:50000,
+      rows:[['Type','Grant credit'],['From','Federal Government Student Grant'],['To','Grant Wallet · '+getOrCreateWalletId()],['Amount',formatMoneyFull(50000)],['Status','Completed'],['Date',formatTxDate(draftSubmittedAt+GRANT_WAIT_MS)],['Reference',draftAppRef||'—'],['Wallet balance after',formatMoneyFull(50000)]],
+      note:'The ₦50,000 grant was credited to your Grant Wallet after your application was approved.'});
+  }
+  var cum=0;
+  withdrawHistory.forEach(function(w,i){
+    cum+=w.amount;
+    var balAfter=50000-cum;
+    txs.push({id:'wd-'+i,kind:'withdrawal',title:'Withdrawal to Bank',subtitle:(w.bank||'Bank')+' ····'+String(w.acct||'').slice(-4),amount:w.amount,dir:'out',status:'Queued',statusClass:'queued',ts:w.ts||0,ref:w.ref||'',balanceAfter:balAfter,
+      rows:[['Type','Withdrawal'],['From','Grant Wallet · '+getOrCreateWalletId()],['To bank',w.bank||'—'],['Account number',w.acct||'—'],['Account name',w.name||'—'],['Amount',formatMoneyFull(w.amount)],['Status','Queued'],['Date',formatTxDate(w.ts||0)],['Reference',w.ref||'—'],['Wallet balance after',formatMoneyFull(balAfter)]],
+      note:'This withdrawal is queued for processing to the bank account shown above. The amount has left your Grant Wallet.'});
+  });
+  return txs;
+}
+var TX_ICONS={
+  in:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v13"/><path d="m6 11 6 6 6-6"/><path d="M4 21h16"/></svg>',
+  out:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V7"/><path d="m6 13 6-6 6 6"/><path d="M4 3h16"/></svg>',
+  fee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>'
+};
+var currentTxById={};
+function renderTxHistory(){
+  var list=document.getElementById('txList'); if(!list) return;
+  var empty=document.getElementById('txEmpty');
+  var count=document.getElementById('txCount');
+  var balRow=document.getElementById('txBalanceRow'), balEl=document.getElementById('txBalance');
+  var txs=buildTransactions();
+  currentTxById={};
+  txs.forEach(function(tx){ currentTxById[tx.id]=tx; });
+  list.innerHTML='';
+  if(count) count.textContent=txs.length?(txs.length+(txs.length===1?' transaction':' transactions')):'';
+  if(balRow&&balEl){
+    if(isGrantApproved()){ balRow.style.display='flex'; balEl.textContent=formatMoneyFull(remainingBalance()); }
+    else balRow.style.display='none';
+  }
+  if(!txs.length){ if(empty) empty.style.display='block'; return; }
+  if(empty) empty.style.display='none';
+  txs.slice().reverse().forEach(function(tx){
+    var b=document.createElement('button'); b.type='button'; b.className='tx-row'; b.dataset.txId=tx.id;
+    var sign=tx.dir==='in'?'+':(tx.dir==='out'?'−':'');
+    b.innerHTML='<span class="tx-ic '+tx.dir+'">'+TX_ICONS[tx.dir]+'</span>'+
+      '<span class="tx-main"><b>'+escTx(tx.title)+'</b><span>'+escTx(tx.subtitle)+' · '+escTx(formatTxDate(tx.ts))+'</span></span>'+
+      '<span class="tx-side"><b class="'+tx.dir+'">'+sign+escTx(formatNairaAmt(tx.amount))+'</b><span class="tx-status '+tx.statusClass+'">'+escTx(tx.status)+'</span></span>'+
+      '<span class="tx-chev" aria-hidden="true">›</span>';
+    b.addEventListener('click',function(){ openReceipt(tx.id); });
+    list.appendChild(b);
+  });
+  var homeTx=document.getElementById('homeTxBtn');
+  if(homeTx) homeTx.style.display=txs.length?'inline-flex':'none';
+}
+function openReceipt(txId){
+  var tx=currentTxById[txId]||buildTransactions().filter(function(t){return t.id===txId;})[0];
+  if(!tx) return;
+  currentTxById[tx.id]=tx;
+  var ov=document.getElementById('receiptOverlay'); if(!ov) return;
+  var icon=document.getElementById('receiptIcon');
+  if(icon){
+    icon.className='receipt-icon'+(tx.statusClass==='queued'?' queued':'');
+    icon.innerHTML=tx.statusClass==='queued'
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>'
+      : '✓';
+  }
+  var amt=document.getElementById('receiptAmount');
+  if(amt){ amt.textContent=(tx.dir==='in'?'+':(tx.dir==='out'?'−':''))+formatMoneyFull(tx.amount); amt.className='receipt-amount'+(tx.dir==='in'?' in':''); }
+  var tt=document.getElementById('receiptTxTitle'); if(tt) tt.textContent=tx.title+' · '+tx.subtitle;
+  var st=document.getElementById('receiptStatus');
+  if(st){ st.textContent=tx.status; st.className='receipt-status '+tx.statusClass; }
+  var rows=document.getElementById('receiptRows');
+  if(rows){
+    rows.innerHTML='';
+    tx.rows.forEach(function(r){
+      var d=document.createElement('div'); d.className='receipt-row';
+      var s=document.createElement('span'); s.textContent=r[0];
+      var bb=document.createElement('b'); bb.textContent=r[1];
+      d.appendChild(s); d.appendChild(bb); rows.appendChild(d);
+    });
+  }
+  var note=document.getElementById('receiptNote'); if(note) note.textContent=tx.note||'';
+  ov.classList.add('open');
+}
+function closeReceipt(){
+  var ov=document.getElementById('receiptOverlay'); if(ov) ov.classList.remove('open');
+}
 function renderWithdrawState(){
   var approved=isGrantApproved();
+  var remaining=remainingBalance();
+  var fullyOut=approved && withdrawTotal>=50000;
   var locked=document.getElementById('withdrawLocked');
   var body=document.getElementById('withdrawBody');
   var doneBox=document.getElementById('withdrawDone');
   var homeBtn=document.getElementById('homeWithdrawBtn');
   var bankBtn=document.getElementById('bankWithdrawBtn');
-  var showWithdrawBtn=approved && !withdrawDone;
+  var headAmt=document.getElementById('withdrawHeadAmt');
+  if(headAmt) headAmt.textContent=approved?('₦'+remaining.toLocaleString('en-NG')+' available'):'₦50,000';
+  var showWithdrawBtn=approved && remaining>0;
   if(homeBtn) homeBtn.style.display=showWithdrawBtn?'inline-flex':'none';
   if(bankBtn) bankBtn.style.display=showWithdrawBtn?'inline-flex':'none';
   if(!locked||!body||!doneBox) return;
-  if(withdrawDone){
+  if(approved && (fullyOut || withdrawJustQueued)){
+    /* Just queued (or wallet fully withdrawn): show the Queued
+       panel for the latest withdrawal. If money remains, it
+       offers Withdraw Again — the balance stays in the wallet. */
+    var last=withdrawHistory[withdrawHistory.length-1];
     locked.style.display='none'; body.style.display='none'; doneBox.style.display='flex';
-    var bank=document.getElementById('fWithdrawBank')?document.getElementById('fWithdrawBank').value.trim():'';
-    var acct=(document.getElementById('wAcct')?document.getElementById('wAcct').value:'').replace(/\D/g,'');
     var dt=document.getElementById('withdrawDoneText');
-    if(dt) dt.textContent=formatNairaAmt(withdrawQueuedAmt||50000)+' queued for '+(bank||'your bank')+(acct?' · '+acct:'')+(withdrawAcctName?' · '+withdrawAcctName:'');
+    if(dt && last) dt.textContent=formatNairaAmt(last.amount)+' queued for '+(last.bank||'your bank')+(last.acct?' · '+last.acct:'')+(last.name?' · '+last.name:'');
+    var rem=document.getElementById('withdrawRemainingText');
+    if(rem){
+      if(remaining>0){ rem.style.display='block'; rem.textContent=formatMoneyFull(remaining)+' still in your Grant Wallet'; }
+      else { rem.style.display='none'; rem.textContent=''; }
+    }
+    var again=document.getElementById('withdrawAgainBtn');
+    if(again) again.style.display=remaining>0?'inline-flex':'none';
     return;
   }
   doneBox.style.display='none';
@@ -530,24 +718,22 @@ function renderWithdrawState(){
   } else {
     body.style.display='none'; locked.style.display='flex';
     var lt=document.getElementById('withdrawLockedText');
-    if(lt) lt.textContent=isSubmitted()?'Available after approval':'Available after approval';
+    if(lt) lt.textContent='Available after approval';
   }
 }
 function renderGrantState(){
   var submitted=isSubmitted(), approved=isGrantApproved();
-  var bal='₦0.00';
-  if(approved && !withdrawDone) bal=GRANT_AMOUNT_TEXT;
-  else if(approved && withdrawDone){
-    var remaining=50000-(withdrawQueuedAmt||50000);
-    bal=remaining>0?('₦'+remaining.toLocaleString('en-NG')+'.00'):'₦0.00';
-  }
+  var bal=approved?formatMoneyFull(remainingBalance()):'₦0.00';
   var homeBal=document.getElementById('homeWalletBal'); if(homeBal) homeBal.textContent=bal;
   var bankBal=document.getElementById('walletBal'); if(bankBal) bankBal.textContent=bal;
   var homeStatus=document.getElementById('homeWalletStatus');
   var bankStatus=document.getElementById('walletStatus');
-  if(withdrawDone){
+  if(approved && withdrawTotal>=50000){
     if(homeStatus) homeStatus.textContent='Status · Queued';
     if(bankStatus) bankStatus.textContent='Queued';
+  } else if(approved && withdrawTotal>0){
+    if(homeStatus) homeStatus.textContent='Status · '+formatNairaAmt(remainingBalance())+' available';
+    if(bankStatus) bankStatus.textContent=formatNairaAmt(withdrawTotal)+' withdrawn · '+formatNairaAmt(remainingBalance())+' available';
   } else if(approved){
     if(homeStatus) homeStatus.textContent='Status · Approved';
     if(bankStatus) bankStatus.textContent='Approved — Grant credited';
@@ -576,6 +762,7 @@ function renderGrantState(){
   var crb2=document.getElementById('cancelRestartBtn');
   if(crb2 && submitted){ crb2.style.display='none'; }
   renderWithdrawState();
+  if(typeof renderTxHistory==='function') renderTxHistory();
 }
 setInterval(function(){ renderGrantState(); },30000);
 function draftKey(){
@@ -584,12 +771,12 @@ function draftKey(){
   return 'fgsg_draft_v1_'+(e||'guest');
 }
 function draftHasProgress(d){
-  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText);
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
 }
 function collectDraft(){
   var payEl=document.querySelector('input[name="pay"]:checked');
   var wBankEl=document.getElementById('fWithdrawBank'), wAcctEl=document.getElementById('wAcct'), wAmtEl=document.getElementById('wAmount');
-  return {step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===7&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
+  return {step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===7&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
 }
 function saveDraft(){
   try{
@@ -619,18 +806,27 @@ function restoreDraft(){
   if(d.withdrawBank) pickerSetValue('wbank',d.withdrawBank);
   var wAcctRestore=document.getElementById('wAcct'); if(wAcctRestore && d.withdrawAcct) wAcctRestore.value=d.withdrawAcct;
   var wAmtRestore=document.getElementById('wAmount'); if(wAmtRestore && d.withdrawAmtText) wAmtRestore.value=d.withdrawAmtText;
-  withdrawAcctName=d.withdrawName||'';
-  withdrawDone=!!d.withdrawDone;
-  withdrawQueuedAmt=+d.withdrawQueuedAmt||(withdrawDone?50000:0);
-  if(d.withdrawVerified && d.withdrawBank && d.withdrawAcct && !withdrawDone){
-    withdrawVerified=true;
-    var wn=document.getElementById('withdrawAcctName'); if(wn) wn.textContent=withdrawAcctName||resolvedWithdrawName();
-    if(!withdrawAcctName) withdrawAcctName=wn?wn.textContent:'';
-    var wm=document.getElementById('withdrawAcctMeta'); if(wm) wm.textContent=d.withdrawBank+' · '+d.withdrawAcct;
-    var wr=document.getElementById('withdrawResult'); if(wr) wr.style.display='flex';
-    var wc=document.getElementById('withdrawConfirmBtn'); if(wc) wc.style.display='inline-flex';
-    var wvb=document.getElementById('withdrawVerifyBtn'); if(wvb) wvb.style.display='none';
+  draftFeePaidAt=+d.feePaidAt||0;
+  draftFeeRef=d.feeRef||'';
+  withdrawHistory=Array.isArray(d.withdrawHistory)?d.withdrawHistory:[];
+  withdrawTotal=+d.withdrawTotal||0;
+  if(!withdrawHistory.length && d.withdrawDone && +d.withdrawQueuedAmt){
+    /* Migration: drafts saved before partial withdrawals kept
+       only one queued amount — turn it into a history entry. */
+    withdrawHistory=[{amount:+d.withdrawQueuedAmt,bank:d.withdrawBank||'',acct:d.withdrawAcct||'',name:d.withdrawName||'',ts:d.submittedAt||Date.now(),ref:'FGSG-WD-2026-LEGACY-1'}];
+    withdrawTotal=+d.withdrawQueuedAmt;
   }
+  if(!withdrawTotal && withdrawHistory.length){
+    withdrawTotal=withdrawHistory.reduce(function(s,w){return s+(+w.amount||0);},0);
+  }
+  withdrawQueuedAmt=withdrawHistory.length?+withdrawHistory[withdrawHistory.length-1].amount||0:(+d.withdrawQueuedAmt||0);
+  withdrawDone=withdrawTotal>=50000;
+  withdrawJustQueued=false;
+  /* Verified state is NOT restored: the account name must come
+     from a fresh /api/resolve-account call in this session, so
+     a saved name is never presented as freshly verified. The
+     bank and account number stay filled in for re-verifying. */
+  withdrawVerified=false; withdrawAcctName='';
   var payVal=d.pay||'Grant Wallet';
   document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value===payVal); });
   document.getElementById('bankFields').style.display= payVal==='Bank Account' ? 'grid':'none';
@@ -686,7 +882,7 @@ function restartApplication(){
   ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fBank','fAcct','fAcctName','fWithdrawBank'].forEach(function(id){ setField(id,''); });
   var wAcctClear=document.getElementById('wAcct'); if(wAcctClear) wAcctClear.value='';
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
-  withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
+  withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; withdrawTotal=0; withdrawHistory=[]; withdrawJustQueued=false; draftFeePaidAt=0; draftFeeRef=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
   Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
   draftJambName=''; draftFeesName=''; draftAppRef=''; draftSubmittedAt=0;
   ['upJamb','upFees'].forEach(function(id){ document.getElementById(id).value=''; });
@@ -744,8 +940,9 @@ var withdrawConfirmBtnEl=document.getElementById('withdrawConfirmBtn');
 if(withdrawConfirmBtnEl){ withdrawConfirmBtnEl.addEventListener('click',showWithdrawAmountStep); }
 var withdrawMaxBtnEl=document.getElementById('withdrawMaxBtn');
 if(withdrawMaxBtnEl){ withdrawMaxBtnEl.addEventListener('click',function(){
-  var amt=document.getElementById('wAmount'); if(amt) amt.value='50,000';
-  setWithdrawAmountStatus('');
+  var rem=remainingBalance();
+  var amt=document.getElementById('wAmount'); if(amt) amt.value=rem?rem.toLocaleString('en-NG'):'';
+  setWithdrawAmountStatus(rem?('Full remaining balance · '+formatNairaAmt(rem)):'');
   if(typeof saveDraft==='function') saveDraft();
   var fin=document.getElementById('withdrawFinalBtn'); if(fin) fin.focus();
 });}
@@ -755,11 +952,33 @@ if(wAmountEl){
     var digits=wAmountEl.value.replace(/\D/g,'').slice(0,6);
     var formatted=digits?Number(digits).toLocaleString('en-NG'):'';
     if(wAmountEl.value!==formatted) wAmountEl.value=formatted;
-    if(digits && Number(digits)>50000) setWithdrawAmountStatus('Amount cannot be more than ₦50,000','err');
+    var rem=remainingBalance();
+    if(digits && Number(digits)>rem) setWithdrawAmountStatus('Amount cannot be more than your remaining balance of '+formatNairaAmt(rem),'err');
     else setWithdrawAmountStatus('');
     if(typeof saveDraft==='function') saveDraft();
   });
 }
+var withdrawAgainBtnEl=document.getElementById('withdrawAgainBtn');
+if(withdrawAgainBtnEl){ withdrawAgainBtnEl.addEventListener('click',function(){
+  withdrawJustQueued=false;
+  var amtBox=document.getElementById('withdrawAmountBox'); if(amtBox) amtBox.style.display='none';
+  var amtEl2=document.getElementById('wAmount'); if(amtEl2) amtEl2.value='';
+  renderGrantState();
+  var card=document.getElementById('withdrawCard'); if(card) card.scrollIntoView({behavior:'smooth',block:'start'});
+});}
+var withdrawReceiptBtnEl=document.getElementById('withdrawReceiptBtn');
+if(withdrawReceiptBtnEl){ withdrawReceiptBtnEl.addEventListener('click',function(){
+  if(withdrawHistory.length) openReceipt('wd-'+(withdrawHistory.length-1));
+});}
+var receiptCloseEl=document.getElementById('receiptClose');
+if(receiptCloseEl) receiptCloseEl.addEventListener('click',closeReceipt);
+var receiptDoneEl=document.getElementById('receiptDoneBtn');
+if(receiptDoneEl) receiptDoneEl.addEventListener('click',closeReceipt);
+var receiptOverlayEl=document.getElementById('receiptOverlay');
+if(receiptOverlayEl) receiptOverlayEl.addEventListener('click',function(e){ if(e.target===this) closeReceipt(); });
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){ var ov=document.getElementById('receiptOverlay'); if(ov && ov.classList.contains('open')) closeReceipt(); }
+});
 var withdrawFinalBtnEl=document.getElementById('withdrawFinalBtn');
 if(withdrawFinalBtnEl){ withdrawFinalBtnEl.addEventListener('click',queueWithdraw); }
 /* Tapping the verified result area re-checks if the details changed */
