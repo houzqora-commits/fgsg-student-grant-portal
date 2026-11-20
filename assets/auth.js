@@ -1,41 +1,25 @@
 /* ============================================================
-   FGSG — browser-built-in auth database
-   Accounts live ONLY in this browser (localStorage). There is
-   no server and no email is sent. Passwords are never stored
-   in plain text: each account stores a random salt plus a
-   PBKDF2-SHA256 hash (Web Crypto). Only name + email + hash
-   are saved — NIN, documents and bank details are never part
-   of the auth record. Clearing browser data deletes accounts.
-   Loaded before app.js; app.js, liveness.js, payment.js use
-   the session helpers exposed here.
+   FGSG — Supabase Auth
+   Accounts now live in Supabase Auth (project
+   uhtgwnunvyduneoqsbxz), not in this browser. Sign up, log in,
+   log out and the session are all Supabase; the session is
+   restored on load and kept in sync with onAuthStateChange.
+   Only a small in-memory cache of the signed-in user is kept
+   here so the rest of the site (goPage, draft keys, Wallet ID)
+   can ask synchronously who is signed in — no passwords, NIN,
+   documents or bank details are ever stored by this file.
+   The application draft itself still saves in this browser
+   (app.js), keyed by the signed-in email, exactly as before.
+   Loaded after supabase-client.js, before app.js.
    ============================================================ */
 
 var FGSGAuth = (function(){
-  var USERS_KEY='fgsg_auth_users_v1';
-  var SESSION_KEY='fgsg_auth_session_v1';
-  var ITERATIONS=120000;
-  var SESSION_MS=24*60*60*1000;
-  var MAX_FAILS=5;
-  var LOCK_MS=60*1000;
+  var _cacheUser = null; /* {id, name, email, createdAt} | null */
+  var _ready = false;
+  var _readyWaiters = [];
 
-  function storageOk(){
-    try{ var k='__fgsg_test__'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
-    catch(e){ return false; }
-  }
-  function loadUsers(){
-    if(!storageOk()) return [];
-    try{ var raw=localStorage.getItem(USERS_KEY); var arr=raw?JSON.parse(raw):[]; return Array.isArray(arr)?arr:[]; }
-    catch(e){ return []; }
-  }
-  function saveUsers(users){
-    if(!storageOk()) return false;
-    try{ localStorage.setItem(USERS_KEY, JSON.stringify(users)); return true; }
-    catch(e){ return false; }
-  }
   function normalizeEmail(e){ return String(e||'').trim().toLowerCase(); }
-  function validEmail(e){
-    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizeEmail(e));
-  }
+  function validEmail(e){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(normalizeEmail(e)); }
   function passwordError(pw){
     pw=String(pw||'');
     if(pw.length<8) return 'Password must be at least 8 characters';
@@ -43,87 +27,73 @@ var FGSGAuth = (function(){
     if(!/[0-9]/.test(pw)) return 'Password must include at least one number';
     return '';
   }
-  function findUser(email){
-    email=normalizeEmail(email);
-    var users=loadUsers();
-    for(var i=0;i<users.length;i++){ if(users[i].email===email) return users[i]; }
-    return null;
+  function toCacheUser(su){
+    if(!su) return null;
+    var meta=su.user_metadata||{};
+    return {
+      id: su.id,
+      name: meta.full_name || meta.name || (su.email?su.email.split('@')[0]:'Student'),
+      email: normalizeEmail(su.email||''),
+      createdAt: su.created_at || null
+    };
   }
-  function randomHex(bytes){
-    var arr=new Uint8Array(bytes);
-    if(window.crypto && crypto.getRandomValues) crypto.getRandomValues(arr);
-    else { for(var i=0;i<arr.length;i++) arr[i]=Math.floor(Math.random()*256); }
-    return bytesToHex(arr);
+  function setCache(su){
+    _cacheUser = toCacheUser(su);
+    return _cacheUser;
   }
-  function bytesToHex(buf){
-    var out='';
-    for(var i=0;i<buf.length;i++){ var h=buf[i].toString(16); out+=(h.length<2?'0':'')+h; }
-    return out;
+  function markReady(){
+    if(_ready) return;
+    _ready=true;
+    var w=_readyWaiters.slice(); _readyWaiters=[];
+    w.forEach(function(fn){ try{ fn(_cacheUser); }catch(e){} });
   }
-  function hexToBytes(hex){
-    var out=new Uint8Array(hex.length/2);
-    for(var i=0;i<out.length;i++) out[i]=parseInt(hex.substr(i*2,2),16);
-    return out;
+  function whenReady(){
+    if(_ready) return Promise.resolve(_cacheUser);
+    return new Promise(function(res){ _readyWaiters.push(res); });
   }
-  /* PBKDF2-SHA256 via Web Crypto. Fallback (no SubtleCrypto, e.g. a
-     non-secure context) is an iterated salted hash — still never
-     plain text, but the secure path is the normal one. */
-  function deriveHash(password, saltHex, iterations){
-    if(window.crypto && crypto.subtle && crypto.subtle.importKey){
-      var enc=new TextEncoder();
-      return crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits'])
-        .then(function(key){
-          return crypto.subtle.deriveBits(
-            {name:'PBKDF2', salt:hexToBytes(saltHex), iterations:iterations, hash:'SHA-256'},
-            key, 256);
-        })
-        .then(function(bits){ return bytesToHex(new Uint8Array(bits)); });
-    }
-    return Promise.resolve().then(function(){
-      var h=5381, s=saltHex+':'+password;
-      for(var r=0;r<4096;r++){ for(var i=0;i<s.length;i++){ h=((h<<5)+h+s.charCodeAt(i))>>>0; } h=(h*33+r)>>>0; }
-      return ('0000000'+h.toString(16)).slice(-8)+saltHex.slice(0,24);
+  function dbReady(){
+    return (typeof fgsgDb!=='undefined' && fgsgDb) ? fgsgDb : null;
+  }
+  /* Restore the Supabase session on load and keep the cache in
+     sync for the whole visit (login, logout, token refresh). */
+  function init(){
+    var db=dbReady();
+    if(!db){ markReady(); return; }
+    db.auth.getSession().then(function(res){
+      var session=res && res.data ? res.data.session : null;
+      setCache(session?session.user:null);
+      markReady();
+      if(typeof updateAuthUI==='function') updateAuthUI();
+      if(typeof fgsgRefreshSerial==='function') fgsgRefreshSerial();
+    }).catch(function(){ markReady(); });
+    db.auth.onAuthStateChange(function(_event, session){
+      setCache(session?session.user:null);
+      markReady();
+      if(typeof updateAuthUI==='function') updateAuthUI();
+      if(session && typeof fgsgRefreshSerial==='function') fgsgRefreshSerial();
     });
   }
-  function safeEqual(a,b){
-    if(typeof a!=='string'||typeof b!=='string'||a.length!==b.length) return false;
-    var diff=0;
-    for(var i=0;i<a.length;i++) diff|=a.charCodeAt(i)^b.charCodeAt(i);
-    return diff===0;
+  function currentUser(){ return _cacheUser; }
+  function currentSession(){ return _cacheUser ? { email:_cacheUser.email, userId:_cacheUser.id } : null; }
+  /* Legacy helpers kept for app.js Step-1 / callers: with
+     Supabase there is no local user table to look up, and a
+     password can only be checked by signing in. */
+  function findUser(email){
+    if(_cacheUser && _cacheUser.email===normalizeEmail(email)) return _cacheUser;
+    return null;
   }
-  function verifyPassword(email, password){
-    var user=findUser(email);
-    if(!user) return Promise.resolve(false);
-    return deriveHash(String(password||''), user.salt, user.iterations||ITERATIONS)
-      .then(function(h){ return safeEqual(h, user.hash); });
+  function verifyPassword(){ return Promise.resolve(!!_cacheUser); }
+  function startSession(){ return currentSession(); }
+  function storageOk(){
+    try{ var k='__fgsg_test__'; localStorage.setItem(k,'1'); localStorage.removeItem(k); return true; }
+    catch(e){ return false; }
   }
-  /* The session lives in sessionStorage, so it ends when the
-     browser closes. Accounts stay in localStorage as before;
-     any older localStorage session is dropped on sight. */
-  try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
-  function startSession(email){
-    if(!storageOk()) return null;
-    var sess={email:normalizeEmail(email), token:randomHex(24), expiresAt:Date.now()+SESSION_MS};
-    try{ sessionStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }catch(e){ return null; }
-    return sess;
-  }
-  function currentSession(){
-    if(!storageOk()) return null;
-    try{
-      var raw=sessionStorage.getItem(SESSION_KEY); if(!raw) return null;
-      var s=JSON.parse(raw);
-      if(!s || !s.email || !s.expiresAt || Date.now()>s.expiresAt){ sessionStorage.removeItem(SESSION_KEY); return null; }
-      return s;
-    }catch(e){ return null; }
-  }
-  function currentUser(){
-    var s=currentSession(); if(!s) return null;
-    var u=findUser(s.email); if(!u) return null;
-    return {name:u.name, email:u.email, createdAt:u.createdAt};
-  }
-  function logout(){
-    try{ sessionStorage.removeItem(SESSION_KEY); }catch(e){}
-    try{ localStorage.removeItem(SESSION_KEY); }catch(e){}
+  function friendlyError(err){
+    var m=(err && err.message) ? String(err.message) : 'Something went wrong — try again';
+    if(/already registered|already exists|user already/i.test(m)) return 'An account with this email already exists — log in instead';
+    if(/invalid login credentials/i.test(m)) return 'Email or password is incorrect';
+    if(/email not confirmed/i.test(m)) return 'Confirm your email first — open the confirmation link sent to your inbox, then log in';
+    return m;
   }
   function signup(name, email, password){
     name=String(name||'').trim(); email=normalizeEmail(email);
@@ -131,77 +101,80 @@ var FGSGAuth = (function(){
     if(!validEmail(email)) return Promise.reject(new Error('Enter a valid email address to sign up'));
     var perr=passwordError(password);
     if(perr) return Promise.reject(new Error(perr));
-    if(!storageOk()) return Promise.reject(new Error('This browser is blocking local storage, so the account cannot be saved on this device'));
-    if(findUser(email)) return Promise.reject(new Error('An account with this email already exists on this device — log in instead'));
-    var salt=randomHex(16);
-    return deriveHash(password, salt, ITERATIONS).then(function(hash){
-      var users=loadUsers();
-      var user={name:name, email:email, salt:salt, hash:hash, iterations:ITERATIONS, createdAt:new Date().toISOString(), fails:0, lockUntil:0};
-      users.push(user);
-      if(!saveUsers(users)) throw new Error('The account could not be saved in this browser');
-      startSession(email);
-      return {name:user.name, email:user.email, createdAt:user.createdAt};
-    });
+    var db=dbReady();
+    if(!db) return Promise.reject(new Error('Supabase is not available — check your connection and try again'));
+    return db.auth.signUp({ email:email, password:password, options:{ data:{ full_name:name } } })
+      .then(function(res){
+        if(res.error) throw new Error(friendlyError(res.error));
+        var data=res.data||{};
+        if(data.user && data.session){ setCache(data.user); return _cacheUser; }
+        if(data.user && !data.session){
+          /* Email confirmation is on for this project: the
+             account exists in Supabase but there is no session
+             until the inbox link is opened. */
+          var e=new Error('Account created — confirm your email, then log in. Open the confirmation link sent to '+email+'.');
+          e.code='EMAIL_CONFIRMATION_REQUIRED';
+          throw e;
+        }
+        throw new Error('The account could not be created — try again');
+      });
   }
   function login(email, password){
     email=normalizeEmail(email);
     if(!validEmail(email)) return Promise.reject(new Error('Enter a valid email address to log in'));
     if(!password) return Promise.reject(new Error('Enter your password to log in'));
-    var user=findUser(email);
-    /* Same message whether the email or the password is wrong,
-       so the form never reveals which accounts exist. */
-    var generic='Email or password is incorrect for this device';
-    if(!user) return Promise.reject(new Error(generic));
-    if(user.lockUntil && Date.now()<user.lockUntil){
-      var secs=Math.ceil((user.lockUntil-Date.now())/1000);
-      return Promise.reject(new Error('Too many failed attempts — try again in '+secs+' seconds'));
-    }
-    return verifyPassword(email, password).then(function(ok){
-      var users=loadUsers();
-      var rec=null;
-      for(var i=0;i<users.length;i++){ if(users[i].email===email) rec=users[i]; }
-      if(!ok){
-        if(rec){
-          rec.fails=(rec.fails||0)+1;
-          if(rec.fails>=MAX_FAILS){ rec.lockUntil=Date.now()+LOCK_MS; rec.fails=0; }
-          saveUsers(users);
-        }
-        throw new Error(generic);
-      }
-      if(rec){ rec.fails=0; rec.lockUntil=0; saveUsers(users); }
-      startSession(email);
-      return {name:user.name, email:user.email, createdAt:user.createdAt};
-    });
+    var db=dbReady();
+    if(!db) return Promise.reject(new Error('Supabase is not available — check your connection and try again'));
+    return db.auth.signInWithPassword({ email:email, password:password })
+      .then(function(res){
+        if(res.error) throw new Error(friendlyError(res.error));
+        setCache(res.data.user);
+        return _cacheUser;
+      });
   }
+  /* Supabase resets by email: a reset link is sent to the
+     inbox and the new password is set from that link. The new
+     password fields on the form are validated locally first so
+     a weak or mismatched password is caught before sending. */
   function resetPassword(email, newPassword){
     email=normalizeEmail(email);
     if(!validEmail(email)) return Promise.reject(new Error('Enter the email address for the account'));
     var perr=passwordError(newPassword);
     if(perr) return Promise.reject(new Error(perr));
-    var user=findUser(email);
-    if(!user) return Promise.reject(new Error('No account with that email was found on this device'));
-    var salt=randomHex(16);
-    return deriveHash(newPassword, salt, ITERATIONS).then(function(hash){
-      var users=loadUsers();
-      for(var i=0;i<users.length;i++){
-        if(users[i].email===email){ users[i].salt=salt; users[i].hash=hash; users[i].iterations=ITERATIONS; users[i].fails=0; users[i].lockUntil=0; }
-      }
-      if(!saveUsers(users)) throw new Error('The new password could not be saved in this browser');
+    var db=dbReady();
+    if(!db) return Promise.reject(new Error('Supabase is not available — check your connection and try again'));
+    return db.auth.resetPasswordForEmail(email).then(function(res){
+      if(res.error) throw new Error(friendlyError(res.error));
       return true;
     });
   }
-  function deleteAccount(){
-    var s=currentSession(); if(!s) return false;
-    var users=loadUsers().filter(function(u){ return u.email!==s.email; });
-    saveUsers(users); logout();
-    return true;
+  function logout(){
+    var db=dbReady();
+    _cacheUser=null;
+    if(db){ db.auth.signOut().catch(function(){}); }
   }
+  /* Client apps cannot delete the Supabase auth user itself;
+     deleting here removes this user's profile row (RLS: own
+     row only) and signs out. The auth record is removed from
+     the Supabase dashboard for a full deletion. */
+  function deleteAccount(){
+    var u=_cacheUser; if(!u) return Promise.resolve(false);
+    var db=dbReady();
+    _cacheUser=null;
+    if(!db) return Promise.resolve(true);
+    return db.from('profiles').delete().eq('id', u.id)
+      .then(function(){ return db.auth.signOut(); })
+      .then(function(){ return true; })
+      .catch(function(){ return true; });
+  }
+  init();
   return {
     validEmail:validEmail, passwordError:passwordError, findUser:findUser,
     verifyPassword:verifyPassword, startSession:startSession,
     currentSession:currentSession, currentUser:currentUser,
     signup:signup, login:login, resetPassword:resetPassword,
-    logout:logout, deleteAccount:deleteAccount, storageOk:storageOk
+    logout:logout, deleteAccount:deleteAccount, storageOk:storageOk,
+    whenReady:whenReady
   };
 })();
 
@@ -250,7 +223,8 @@ function updateAuthUI(){
       var since='';
       try{ since=new Date(user.createdAt).toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'}); }catch(e){}
       box.innerHTML='<b>'+escapeHtml(user.name)+'</b><br>'+escapeHtml(user.email)+
-        (since?'<br><span>'+escapeHtml(since)+'</span>':'');
+        (since?'<br><span>'+escapeHtml(since)+'</span>':'')+
+        '<br><span>Serial No. · </span><b data-serial-value>'+escapeHtml(window.__fgsgSerial||'0100')+'</b>';
     } else {
       box.innerHTML='Not signed in.';
     }
@@ -260,6 +234,7 @@ function updateAuthUI(){
     var fn=document.getElementById('fName'); if(fn && !fn.value) fn.value=user.name;
   }
   if(typeof renderWalletId==='function') renderWalletId();
+  if(typeof fgsgRenderSerial==='function' && window.__fgsgSerial) fgsgRenderSerial(window.__fgsgSerial, window.__fgsgLiveCount);
 }
 function authSetBusy(btnId, busy, label){
   var b=document.getElementById(btnId);
@@ -277,6 +252,7 @@ function authLogin(){
     document.getElementById('fPass').value=p;
     var fn=document.getElementById('fName'); if(fn && !fn.value) fn.value=user.name;
     updateAuthUI();
+    if(typeof fgsgRefreshSerial==='function') fgsgRefreshSerial();
     enterApp('home');
     toast('Welcome back, '+user.name.split(' ')[0]);
   }).catch(function(err){
@@ -296,15 +272,21 @@ function authSignup(){
     document.getElementById('fEmail').value=user.email;
     document.getElementById('fPass').value=p;
     updateAuthUI();
+    if(typeof fgsgRefreshSerial==='function') fgsgRefreshSerial();
     enterApp('application');
     toast('Account created');
   }).catch(function(err){
     authSetBusy('signupBtn', false);
-    setAuthMsg('signupMsg', err.message);
+    if(err && err.code==='EMAIL_CONFIRMATION_REQUIRED'){
+      setAuthMsg('signupMsg', err.message, true);
+      var le=document.getElementById('authLoginEmail'); if(le) le.value=e.trim().toLowerCase();
+    } else {
+      setAuthMsg('signupMsg', err.message);
+    }
   });
 }
-/* No email is sent: the reset happens here, on the device that
-   holds the account — holding the device is the proof. */
+/* Supabase sends the reset link by email; the new password is
+   set from that link, not on this device. */
 function authForgot(){
   var e=document.getElementById('authForgotEmail').value,
       p=document.getElementById('authForgotPass').value, p2=document.getElementById('authForgotPass2').value;
@@ -314,7 +296,9 @@ function authForgot(){
   authSetBusy('forgotBtn', true);
   FGSGAuth.resetPassword(e,p).then(function(){
     authSetBusy('forgotBtn', false);
-    document.getElementById('forgotOk').style.display='block';
+    var ok=document.getElementById('forgotOk');
+    ok.innerHTML='<b>Reset link sent.</b> Open the link in your email to set your new password.';
+    ok.style.display='block';
     document.getElementById('authLoginEmail').value=e.trim().toLowerCase();
     setAuthMsg('forgotMsg','');
   }).catch(function(err){
@@ -339,13 +323,16 @@ function authDeleteAccount(){
     return;
   }
   var delUser=FGSGAuth.currentUser();
-  if(FGSGAuth.deleteAccount()){
+  var done=function(){
     if(delUser){ try{ localStorage.removeItem('fgsg_draft_v1_'+delUser.email); localStorage.removeItem('fgsg_wallet_id_v1_'+delUser.email); }catch(e){} }
     if(btn){ delete btn.dataset.armed; btn.textContent='Delete Account'; }
     updateAuthUI();
     goPage('landing');
     toast('Account deleted');
-  }
+  };
+  var result=FGSGAuth.deleteAccount();
+  if(result && typeof result.then==='function'){ result.then(done).catch(done); }
+  else if(result){ done(); }
 }
 /* ---------- password peek: eye toggle on every password field ---------- */
 var PEEK_EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';

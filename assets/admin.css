@@ -1,0 +1,135 @@
+/* ============================================================
+   FGSG — Admin panel (/admin)
+   Separate from the student portal: its own login screen and
+   dashboard, in the same black / white / Nigerian-green system.
+   Loaded after styles.css. The student dock, header and footer
+   are hidden while the admin page is open (body.in-admin).
+   ============================================================ */
+body.in-admin header.site,
+body.in-admin footer,
+body.in-admin .dock{display:none !important}
+#page-admin{background:#EEEEEE;color:#0b0d0b;min-height:100vh}
+.admin-wrap{max-width:1100px;margin:0 auto;padding:36px 20px 64px}
+
+/* ---------- admin login ---------- */
+.admin-login-shell{max-width:460px;margin:6vh auto 0}
+.admin-login-card{background:#fff;border:2.5px solid var(--green);border-radius:16px;box-shadow:6px 6px 0 rgba(0,163,92,.9);padding:28px}
+.admin-login-card h2{font-size:26px;font-weight:900;text-transform:uppercase;text-align:center}
+.admin-login-card h2 span{color:var(--green)}
+.admin-login-sub{text-align:center;color:#44554a;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase;margin-top:8px}
+.admin-login-card label.f{margin-top:18px}
+.admin-login-card .btn{width:100%;margin-top:22px}
+.admin-login-card .btn-green{background:#00713f;border-color:#00713f;color:#fff;min-height:50px;font-size:15.5px}
+.admin-login-card .btn-green:hover{background:#005c33;border-color:#005c33}
+.admin-or{display:flex;align-items:center;gap:12px;margin:24px 0 4px;color:#5c6f63;font-size:11.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.admin-or::before,.admin-or::after{content:"";flex:1;height:1px;background:#c9d2c9}
+.admin-login-card #adminSbBtn{width:100%;margin-top:18px;min-height:48px}
+.admin-back{display:block;text-align:center;margin-top:20px;color:#00713f;font-weight:700;text-decoration:none}
+.admin-back:hover{text-decoration:underline}
+
+/* ---------- admin dashboard ---------- */
+.admin-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.admin-top h2{font-size:clamp(24px,4vw,32px);font-weight:900;text-transform:uppercase}
+.admin-top h2 span{color:var(--green)}
+.admin-top p{color:#44554a;font-weight:600;font-size:14px;margin-top:5px}
+.admin-top-actions{display:flex;gap:10px;flex-wrap:wrap}
+.admin-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:22px}
+@media(max-width:960px){.admin-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.admin-stats{grid-template-columns:1fr}}
+.admin-stat{background:#fff;border:1.5px solid #0b0d0b;border-radius:14px;box-shadow:4px 4px 0 var(--green);padding:16px}
+.admin-stat small{display:block;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#00713f;line-height:1.4}
+.admin-stat b{display:block;font-family:"Archivo",sans-serif;font-size:24px;line-height:1.15;margin-top:7px;word-break:break-word}
+.admin-controls{background:#fff;border:1.5px solid #0b0d0b;border-radius:14px;padding:16px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:12px;margin-bottom:18px}
+@media(max-width:860px){.admin-controls{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.admin-controls{grid-template-columns:1fr}}
+.admin-controls label{font-weight:700;font-size:13px;display:block}
+.admin-controls input,.admin-controls select{margin-top:6px}
+.admin-msg{border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;font-weight:600;margin-bottom:16px;display:none}
+.admin-msg.show{display:block}
+.admin-msg.err{background:#fdf0ef;border:1px solid #b3261e;color:#7c1a14}
+.admin-msg.ok{background:#eef7ee;border:1px solid var(--green);color:#274435}
+.admin-msg.info{background:#eef7ee;border:1px dashed var(--green);color:#274435}
+
+/* applications table — stacks into cards on phones, never scrolls sideways */
+.admin-table-card{background:#fff;border:1.5px solid #0b0d0b;border-radius:14px;box-shadow:4px 4px 0 #0b0d0b;overflow:hidden}
+.admin-table{width:100%;border-collapse:collapse;font-size:13.5px}
+.admin-table th{background:#0b0f0b;color:#fff;text-align:left;padding:12px 10px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;line-height:1.35}
+.admin-table td{padding:12px 10px;border-top:1px solid #e3e8e3;vertical-align:top;line-height:1.45;word-break:break-word}
+.admin-table tbody tr{cursor:pointer;transition:transform .08s ease,background .15s}
+.admin-table tbody tr:hover{background:#f7faf7}
+.admin-table tbody tr:active{transform:scale(.995)}
+.admin-table .a-name{font-weight:800;font-family:"Archivo",sans-serif;font-size:14px}
+.admin-status{display:inline-block;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:900;letter-spacing:.07em;text-transform:uppercase;line-height:1.3;white-space:nowrap}
+.admin-status.pending{background:#fff8e6;color:#7c4a03;border:1px solid #d97706}
+.admin-status.approved{background:#eef7ee;color:#0b6b3a;border:1px solid var(--green)}
+.admin-status.rejected{background:#fdf0ef;color:#7c1a14;border:1px solid #b3261e}
+.admin-empty{padding:34px 18px;text-align:center;color:#44554a;font-weight:600}
+.admin-count{font-size:13px;font-weight:700;color:#44554a;margin:0 2px 10px}
+@media(max-width:820px){
+  .admin-table thead{display:none}
+  .admin-table,.admin-table tbody,.admin-table tr,.admin-table td{display:block;width:100%}
+  .admin-table tr{border-top:1px solid #e3e8e3;padding:10px 14px}
+  .admin-table td{border-top:none;padding:4px 0;display:flex;justify-content:space-between;gap:18px;text-align:right}
+  .admin-table td::before{content:attr(data-label);font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#00713f;text-align:left;padding-top:2px;flex:0 0 auto}
+  .admin-table td.a-main{display:block;text-align:left}
+  .admin-table td.a-main::before{display:block;margin-bottom:3px}
+}
+
+/* ---------- student detail ---------- */
+.admin-detail{background:#fff;border:1.5px solid #0b0d0b;border-radius:14px;box-shadow:4px 4px 0 var(--green);padding:22px;margin-top:18px}
+.admin-detail h3{font-size:21px;line-height:1.25}
+.admin-detail h4{font-family:"Archivo",sans-serif;font-size:16px;margin:24px 0 10px;padding-top:18px;border-top:1px solid #e3e8e3}
+.admin-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 22px;margin-top:14px}
+@media(max-width:640px){.admin-detail-grid{grid-template-columns:1fr}}
+.admin-kv{display:flex;justify-content:space-between;gap:18px;padding:9px 0;border-bottom:1px solid #eef1ee;font-size:14px;line-height:1.5}
+.admin-kv span{color:#5c6f63;font-weight:600;flex:0 0 auto}
+.admin-kv b{font-weight:800;text-align:right;word-break:break-word}
+.admin-doc{display:flex;justify-content:space-between;gap:14px;align-items:center;border:1.5px solid #e3e8e3;border-radius:12px;padding:12px 14px;margin-top:8px;font-size:14px;flex-wrap:wrap}
+.admin-doc b{font-weight:800}
+.admin-doc span{color:#5c6f63;font-weight:600;display:block;font-size:12.5px;margin-top:2px}
+.admin-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+.admin-actions .btn{flex:1;min-width:160px;min-height:50px}
+.btn-reject{background:#b3261e;border-color:#b3261e;color:#fff}
+.btn-reject:hover{background:#8f1d17;border-color:#8f1d17}
+.admin-mini-row{display:flex;justify-content:space-between;gap:14px;padding:9px 0;border-bottom:1px solid #eef1ee;font-size:13.5px;line-height:1.5;flex-wrap:wrap}
+.admin-mini-row span{color:#5c6f63;font-weight:600}
+.admin-mini-row b{font-weight:800;text-align:right}
+.admin-none{color:#5c6f63;font-weight:600;font-size:14px;padding:6px 0}
+
+/* ---------- per-item review ---------- */
+.review-progress{border:1.5px solid #d97706;background:#fff8e6;border-radius:12px;padding:13px 15px;margin-bottom:14px}
+.review-progress.all-accepted{border-color:var(--green);background:#eef7ee}
+.review-progress b{font-family:"Archivo",sans-serif;font-size:15.5px;display:block;line-height:1.3}
+.review-progress span{font-size:13.5px;font-weight:600;color:#44554a;line-height:1.5;display:block;margin-top:3px}
+.review-table-note{border:1px solid #b3261e;background:#fdf0ef;color:#7c1a14;border-radius:12px;padding:12px 14px;font-size:13.5px;line-height:1.6;font-weight:600;margin-bottom:14px}
+.review-item{border:1.5px solid #e3e8e3;border-radius:12px;padding:14px;margin-top:10px}
+.review-item.accepted{border-color:var(--green);background:#f7fbf7}
+.review-item.declined{border-color:#b3261e;background:#fdf6f5}
+.review-item.resend{border-color:#d97706;background:#fffaf0}
+.review-item.resubmitted{border-color:#0b0d0b;background:#f7faf7}
+.review-item-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.review-item-head b{font-family:"Archivo",sans-serif;font-size:15.5px;line-height:1.3}
+.review-pill{display:inline-block;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;line-height:1.3;white-space:nowrap}
+.review-pill.accepted{background:#eef7ee;color:#0b6b3a;border:1px solid var(--green)}
+.review-pill.declined{background:#fdf0ef;color:#7c1a14;border:1px solid #b3261e}
+.review-pill.resend{background:#fff8e6;color:#7c4a03;border:1px solid #d97706}
+.review-pill.resubmitted{background:#eef4ff;color:#1d3a6b;border:1px solid #3b5bdb}
+.review-pill.waiting{background:#f1f3f1;color:#44554a;border:1px solid #9aa79a}
+.review-value{font-size:14px;font-weight:700;line-height:1.55;margin-top:8px;word-break:break-word}
+.review-view-btn{min-height:34px;padding:5px 12px;font-size:12.5px;margin-left:6px}
+.review-reason{font-size:13.5px;line-height:1.55;margin-top:7px;color:#7c1a14;font-weight:600}
+.review-reason span{font-weight:900;text-transform:uppercase;font-size:11px;letter-spacing:.07em}
+.review-reason-label{display:block;font-weight:700;font-size:13px;margin-top:12px}
+.review-reason-input{width:100%;margin-top:6px;padding:10px 12px;border:1.5px solid #9aa79a;border-radius:10px;font:inherit;font-size:14px;background:#fff;color:#0b0d0b;resize:vertical}
+.review-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:11px}
+.review-actions .btn{flex:1;min-width:120px;min-height:44px}
+.review-msg{display:none;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;font-weight:600;margin-top:10px}
+.review-msg.show{display:block}
+.review-msg.err{background:#fdf0ef;border:1px solid #b3261e;color:#7c1a14}
+.review-msg.ok{background:#eef7ee;border:1px solid var(--green);color:#274435}
+.review-history{margin-top:12px;border-top:1px dashed #c9d2c9;padding-top:10px;display:grid;gap:7px}
+.review-history-title{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#00713f}
+.review-history-row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:#44554a;line-height:1.5}
+.review-history-reason{color:#7c1a14}
+.review-gate-note{font-size:13.5px;font-weight:600;color:#7c4a03;line-height:1.55;margin-top:10px}
+.admin-actions .btn[disabled]{opacity:.45;cursor:not-allowed}

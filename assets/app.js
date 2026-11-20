@@ -232,6 +232,26 @@ function getOrCreateWalletId(){
 function renderWalletId(){
   var el=document.getElementById('walletIdPill');
   if(el) el.textContent='Wallet ID · '+getOrCreateWalletId();
+  renderSerial();
+}
+/* ---------- Serial No.: LIVE from Supabase, starting at 0100 ----------
+   The serial is never a hardcoded or random number here: it is
+   fetched fresh from Supabase by fgsgRefreshSerial() in
+   supabase-client.js (live applications count, in order, first
+   student 0100, next 0101, then 0102…). This function only
+   throttles the refresh and paints the last live value; the
+   starting placeholder 0100 in the markup is the first serial
+   itself, shown until the first live count lands. */
+var _serialRefreshAt=0;
+function renderSerial(){
+  if(window.__fgsgSerial && typeof fgsgRenderSerial==='function'){
+    fgsgRenderSerial(window.__fgsgSerial, window.__fgsgLiveCount);
+  }
+  var now=Date.now();
+  if(typeof fgsgRefreshSerial==='function' && now-_serialRefreshAt>4000){
+    _serialRefreshAt=now;
+    fgsgRefreshSerial();
+  }
 }
 
 /* ---------- page routing: landing / auth / app are separate pages ----------
@@ -244,7 +264,7 @@ function renderWalletId(){
    while the portal page is open (body.in-portal); there is no
    bottom navbar on the landing or auth pages. */
 var currentPageName='landing';
-var PAGE_ORDER={landing:0,auth:1,app:2};
+var PAGE_ORDER={landing:0,auth:1,app:2,admin:3};
 var VIEW_ORDER={home:0,bank:1,application:2,notices:3,me:4};
 function slideIn(el,dir){
   if(!el) return;
@@ -257,8 +277,19 @@ document.addEventListener('animationend',function(e){
 });
 function goPage(page,authTab){
   /* proper auth check: the dashboard only opens with a live
-     browser session — otherwise route to the Auth page */
+     Supabase session — otherwise route to the Auth page. If the
+     session is still being restored from Supabase on a fresh
+     load, wait for it instead of bouncing a signed-in student
+     to the login form. */
   if(page==='app' && window.FGSGAuth && !FGSGAuth.currentUser()){
+    if(typeof FGSGAuth.whenReady==='function' && !goPage._authWaited){
+      goPage._authWaited=true;
+      FGSGAuth.whenReady().then(function(u){
+        goPage._authWaited=false;
+        if(u){ goPage('app'); } else { toast('Log in or create an account first'); goPage('auth', authTab||'login'); }
+      });
+      return;
+    }
     toast('Log in or create an account first');
     page='auth'; if(!authTab) authTab='login';
   }
@@ -280,14 +311,13 @@ function goLandingAnchor(e,id){
   e.preventDefault(); goPage('landing');
   setTimeout(function(){ var t=document.getElementById(id); if(t) t.scrollIntoView({behavior:'smooth'}); },60);
 }
-function enterApp(view){ if(typeof restoreDraft==='function') restoreDraft(); renderWalletId(); goPage('app'); showView(view||'home'); }
+function enterApp(view){ if(typeof restoreDraft==='function') restoreDraft(); renderWalletId(); if(typeof fgsgRefreshSerial==='function') fgsgRefreshSerial(); goPage('app'); showView(view||'home'); }
 function switchAuthTab(name){
   document.querySelectorAll('[data-auth-tab]').forEach(function(t){t.classList.toggle('on',t.dataset.authTab===name)});
   document.querySelectorAll('[data-auth-panel]').forEach(function(p){p.classList.toggle('on',p.dataset.authPanel===name)});
 }
 /* authLogin / authSignup / authForgot / authLogout live in
-   auth.js, backed by the browser-built-in account store
-   (FGSGAuth) with hashed passwords and real checks. */
+   auth.js, backed by Supabase Auth (FGSGAuth). */
 /* ---------- sliding active tab ----------
    The portal dock carries a green circle holding the active
    tab's icon, sitting on top of the pill — straddling its top
@@ -344,9 +374,11 @@ document.querySelectorAll('.dock button').forEach(function(b){b.addEventListener
 
 /* multi-step form — Step 1 is the start screen (no login
    re-confirmation: the user is already signed in), so the
-   counted form steps are Personal (2) through Payout (6). */
-var step=1, totalSteps=5, liveDone=false, feeDone=false, lastRenderedStep=null;
-var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Documents & identity',5:'Verification fee — Paystack',6:'Choose payout',7:'Pending — Waiting for Approval'};
+   counted form steps are Personal (2) through Payout (8),
+   with Academic (4) and Background (5) before Documents &
+   identity / liveness (6) and the verification fee (7). */
+var step=1, totalSteps=7, liveDone=false, feeDone=false, lastRenderedStep=null;
+var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Academic details',5:'Background details',6:'Documents & identity',7:'Verification fee — Paystack',8:'Choose payout',9:'Pending — Waiting for Approval'};
 function renderStep(){
   document.querySelectorAll('.fstep').forEach(function(f){f.classList.toggle('active',+f.dataset.step===step)});
   /* steps slide in the direction of travel: Continue from the
@@ -360,7 +392,7 @@ function renderStep(){
     document.getElementById('stepTitle').textContent='Application — Start';
     document.getElementById('stepPct').textContent='0%';
     document.getElementById('pbar').style.width='0%';
-  } else if(step===7){
+  } else if(step===9){
     var approved7=(typeof isGrantApproved==='function')?isGrantApproved():false;
     document.getElementById('stepTitle').textContent=approved7?'Approved — Grant Credited':'Pending — Waiting for Approval';
     document.getElementById('stepPct').textContent='100%';
@@ -372,14 +404,14 @@ function renderStep(){
     document.getElementById('stepPct').textContent=pct+'%';
     document.getElementById('pbar').style.width=pct+'%';
   }
-  document.getElementById('backBtn').style.visibility= step===1||step===7 ? 'hidden':'visible';
-  document.getElementById('nextBtn').textContent= step===6 ? 'Submit Application ✓' : 'Continue →';
-  document.getElementById('formNav').style.display= step===1||step===7 ? 'none':'flex';
+  document.getElementById('backBtn').style.visibility= step===1||step===9 ? 'hidden':'visible';
+  document.getElementById('nextBtn').textContent= step===8 ? 'Submit Application ✓' : 'Continue →';
+  document.getElementById('formNav').style.display= step===1||step===9 ? 'none':'flex';
   /* Cancel & Restart: available on ANY step while the application
      is still being filled in (Steps 2–6, and Step 1 if a draft is
      already in progress). It locks ONLY after Submit — Step 7 /
      a submitted application can never be cancelled or restarted. */
-  var lockedRb=(typeof isSubmitted==='function'&&isSubmitted())||step===7;
+  var lockedRb=(typeof isSubmitted==='function'&&isSubmitted())||step===9;
   var hasProgressRb=step>1;
   if(!hasProgressRb){
     try{ hasProgressRb=typeof draftHasProgress==='function' && draftHasProgress(collectDraft()); }catch(e){}
@@ -387,13 +419,12 @@ function renderStep(){
   var showRestart=!lockedRb && hasProgressRb;
   var rb=document.getElementById('restartAppBtn');
   if(rb){ rb.style.display= showRestart ? 'inline-flex':'none'; }
-  if(step===5){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
+  if(step===7){ var pe=document.getElementById('psEmail'); if(pe) pe.textContent=(val('fEmail')||'you@example.com'); }
 }
 function val(id){return document.getElementById(id).value.trim();}
-/* Step 1 is checked against the browser account store: the
-   password must match the saved hash for that email, a new
-   email creates the account (hashed), and a signed-in user
-   whose email matches may continue without re-typing. */
+/* Step 1 legacy check, kept for compatibility: with Supabase
+   Auth the signed-in user whose email matches continues
+   without re-typing; signing up happens on the Auth page. */
 function validateStep1Async(){
   var email=val('fEmail'), pw=document.getElementById('fPass').value;
   if(!window.FGSGAuth){
@@ -406,15 +437,15 @@ function validateStep1Async(){
   if(user && user.email===email.toLowerCase()){
     if(!pw) return Promise.resolve(true);
     return FGSGAuth.verifyPassword(email,pw).then(function(ok){
-      if(!ok) toast('That password does not match the account saved in this browser');
+      if(!ok) toast('That password does not match your account');
       return ok;
     });
   }
   var existing=FGSGAuth.findUser(email);
   if(existing){
-    if(!pw){ toast('This email already has an account on this device — enter its password'); return Promise.resolve(false); }
+    if(!pw){ toast('This email already has an account — log in instead'); return Promise.resolve(false); }
     return FGSGAuth.verifyPassword(email,pw).then(function(ok){
-      if(!ok){ toast('That password does not match the account saved in this browser'); return false; }
+      if(!ok){ toast('That password does not match your account'); return false; }
       FGSGAuth.startSession(email); if(typeof updateAuthUI==='function') updateAuthUI();
       return true;
     });
@@ -428,39 +459,61 @@ function validateStep1Async(){
   }).catch(function(err){ toast(err.message); return false; });
 }
 function validateStep(){
-  if(step===2){ if(!val('fName')||!val('fDob')||!val('fState')||!val('fLga')){toast('Complete name, date of birth, state of origin and LGA');return false;} }
+  if(step===2){ if(!val('fName')||!val('fDob')||!val('fState')||!val('fLga')){toast('Complete name, date of birth, state of origin and LGA');return false;} var dob=val('fDob'); if(dob<'1980-01-01'||dob>'2016-12-31'){toast('Date of birth must be between 1980 and 2016');return false;} }
   if(step===3){ if(!val('fType')||!val('fLevel')||!val('fSchool')||!val('fDept')){toast('Complete institution type, level, institution and department');return false;} }
-  if(step===4){ if(!document.getElementById('upJamb').files.length && !draftJambName){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length && !draftFeesName){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
-  if(step===5){ if(!feeDone){toast('Pay the ₦3,000 verification fee with Paystack to continue');return false;} }
+  if(step===4){
+    if(!val('fMatric')){toast('Enter your matric / student registration number');return false;}
+    var cgpa=parseFloat(val('fCgpa'));
+    if(isNaN(cgpa)){toast('Enter your CGPA');return false;}
+    if(cgpa>5){toast('CGPA cannot be more than 5.00');return false;}
+    if(cgpa<3.5){toast('CGPA must be at least 3.50 to apply');return false;}
+    if(!document.getElementById('upResult').files.length && !draftResultName){toast('Attach your current semester result / statement of result');return false;}
+    if(!document.getElementById('upStudentId').files.length && !draftStudentIdName){toast('Attach your student ID card');return false;}
+  }
+  if(step===5){
+    if(!document.getElementById('upOrigin').files.length && !draftOriginName){toast('Attach your certificate of origin');return false;}
+    if(!document.getElementById('upBirth').files.length && !draftBirthName){toast('Attach your birth certificate / age declaration');return false;}
+    if(!document.getElementById('upPassport').files.length && !draftPassportName){toast('Attach your passport photograph');return false;}
+    if(!val('fParentsStatus')){toast("Enter your parents' financial status / occupation");return false;}
+    var phoneDigits=val('fPhone').replace(/\D/g,'');
+    if(phoneDigits.length===13 && phoneDigits.indexOf('234')===0) phoneDigits='0'+phoneDigits.slice(3);
+    if(!/^\d{11}$/.test(phoneDigits)){toast('Enter a valid 11-digit phone number');return false;}
+    var noSch=document.getElementById('fNoOtherScholarship');
+    if(!noSch || !noSch.checked){toast('Confirm you are not a beneficiary of any other government scholarship');return false;}
+  }
+  if(step===6){ if(!document.getElementById('upJamb').files.length && !draftJambName){toast('Attach your JAMB admission letter');return false;} if(!document.getElementById('upFees').files.length && !draftFeesName){toast('Attach your last school fees receipt');return false;} var nin=val('fNin').replace(/\s/g,''); if(!/^\d{11}$/.test(nin)){toast('Enter 11 digits for NIN');return false;} if(!liveDone){toast('Run the liveness check to continue');return false;} }
+  if(step===7){ if(!feeDone){toast('Pay the ₦3,000 verification fee with Paystack to continue');return false;} }
   return true;
 }
 var startAppBtn=document.getElementById('startAppBtn');
 if(startAppBtn){ startAppBtn.addEventListener('click',function(){
-  if(isSubmitted()){ step=7; renderStep(); renderGrantState(); toast('Application already submitted'); return; }
+  if(isSubmitted()){ step=9; renderStep(); renderGrantState(); toast('Application already submitted'); return; }
   step=2; renderStep(); saveDraft();
   window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'});
 });}
 document.getElementById('nextBtn').addEventListener('click',function(){
-  if(step===7||isSubmitted()&&step>=7){ toast('Application already submitted'); return; }
-  if(step<6){ if(!validateStep())return; step++; renderStep(); saveDraft(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
-  else if(step===6){ submitApplication(); }
+  if(step===9||isSubmitted()&&step>=9){ toast('Application already submitted'); return; }
+  if(step<8){ if(!validateStep())return; step++; renderStep(); saveDraft(); window.scrollTo({top:document.getElementById('apply').offsetTop,behavior:'smooth'}); }
+  else if(step===8){ submitApplication(); }
 });
-document.getElementById('backBtn').addEventListener('click',function(){ if(step===7) return; if(step>1){step--;renderStep();saveDraft();} });
+document.getElementById('backBtn').addEventListener('click',function(){ if(step===9) return; if(step>1){step--;renderStep();saveDraft();} });
 
 /* uploads — the draft keeps the attached file names, because a page
    cannot refill a file input after a reload */
-[['upJamb','okJamb'],['upFees','okFees']].forEach(function(pair){
-  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; if(pair[0]==='upJamb') draftJambName=nm; else draftFeesName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
+var UPLOAD_DRAFT_VARS={upJamb:'draftJambName',upFees:'draftFeesName',upResult:'draftResultName',upStudentId:'draftStudentIdName',upOrigin:'draftOriginName',upBirth:'draftBirthName',upPassport:'draftPassportName'};
+[['upJamb','okJamb'],['upFees','okFees'],['upResult','okResult'],['upStudentId','okStudentId'],['upOrigin','okOrigin'],['upBirth','okBirth'],['upPassport','okPassport']].forEach(function(pair){
+  document.getElementById(pair[0]).addEventListener('change',function(e){ if(e.target.files.length){ var nm=e.target.files[0].name; var varName=UPLOAD_DRAFT_VARS[pair[0]]; if(varName==='draftJambName') draftJambName=nm; else if(varName==='draftFeesName') draftFeesName=nm; else if(varName==='draftResultName') draftResultName=nm; else if(varName==='draftStudentIdName') draftStudentIdName=nm; else if(varName==='draftOriginName') draftOriginName=nm; else if(varName==='draftBirthName') draftBirthName=nm; else if(varName==='draftPassportName') draftPassportName=nm; var ok=document.getElementById(pair[1]); ok.style.display='block'; ok.textContent='✓ '+nm+' attached'; saveDraft(); }});
 });
 
 /* ---------- application draft: progress saves at every step ----------
-   The draft lives in this browser only (localStorage), keyed by the
-   signed-in email — the same device-only storage the accounts use.
-   Closing the page mid-application and coming back restores the step
-   and every answer, so an applicant who stopped at Step 3 reopens
-   the form on Step 3 with their details filled in. Restart clears
-   the draft for this account and returns the form to Step 1. */
-var draftJambName='', draftFeesName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
+   The draft lives in this browser (localStorage), keyed by the
+   signed-in Supabase email. Closing the page mid-application and
+   coming back restores the step and every answer, so an applicant
+   who stopped at Step 3 reopens the form on Step 3 with their
+   details filled in. Restart clears the draft for this account
+   and returns the form to Step 1. The submitted application
+   itself is saved to Supabase (payment.js / supabase-client.js). */
+var draftJambName='', draftFeesName='', draftResultName='', draftStudentIdName='', draftOriginName='', draftBirthName='', draftPassportName='', draftAppRef='', draftRestoredFor=null, draftSubmittedAt=0;
 /* Background approval: after submission the application stays
    Pending with no timer shown anywhere. The submission time is
    kept silently in the draft; once the background wait has
@@ -637,11 +690,23 @@ function queueWithdraw(){
   withdrawProcessingTimer=setTimeout(function(){
     withdrawProcessingTimer=null;
     if(proc) proc.style.display='none';
-    withdrawHistory.push({amount:amount,bank:bank,acct:acct,name:nameAtQueue,ts:Date.now(),ref:makeWithdrawRef()});
+    var wdRef=makeWithdrawRef();
+    withdrawHistory.push({amount:amount,bank:bank,acct:acct,name:nameAtQueue,ts:Date.now(),ref:wdRef});
     withdrawTotal=(withdrawTotal||0)+amount;
     withdrawQueuedAmt=amount;
     withdrawDone=withdrawTotal>=50000;
     withdrawJustQueued=true;
+    /* Mirror this withdrawal to Supabase: a withdrawals row
+       (status queued) plus its transaction row, balance after. */
+    if(typeof fgsgResolveApplicationId==='function' && typeof fgsgSync==='function'){
+      var balAfterWd=50000-withdrawTotal;
+      fgsgSync('withdrawal', fgsgResolveApplicationId(draftAppRef).then(function(appId){
+        var jobs=[];
+        if(typeof fgsgSaveWithdrawal==='function') jobs.push(fgsgSaveWithdrawal(appId, amount, bank, bankCodeFor(bank), acct, nameAtQueue));
+        if(typeof fgsgAddTransaction==='function') jobs.push(fgsgAddTransaction(appId, 'withdrawal', 'out', amount, wdRef, balAfterWd));
+        return Promise.all(jobs);
+      }));
+    }
     var amtEl=document.getElementById('wAmount'); if(amtEl) amtEl.value='';
     if(typeof saveDraft==='function') saveDraft();
     renderGrantState();
@@ -788,6 +853,20 @@ function renderWithdrawState(){
 }
 function renderGrantState(){
   var submitted=isSubmitted(), approved=isGrantApproved();
+  /* The moment the background 24h wait completes and the grant
+     is credited, mirror the ₦50,000 grant transaction to
+     Supabase — once per application (flag kept per account). */
+  if(approved && typeof fgsgResolveApplicationId==='function' && typeof fgsgSync==='function'){
+    var grantSyncKey='fgsg_grant_tx_synced_v1_'+draftAppRef;
+    var grantSynced=false;
+    try{ grantSynced=!!localStorage.getItem(grantSyncKey); }catch(e){}
+    if(!grantSynced){
+      try{ localStorage.setItem(grantSyncKey,'1'); }catch(e){}
+      fgsgSync('grant transaction', fgsgResolveApplicationId(draftAppRef).then(function(appId){
+        if(typeof fgsgAddTransaction==='function') return fgsgAddTransaction(appId, 'grant', 'in', 50000, draftAppRef, 50000);
+      }));
+    }
+  }
   var bal=approved?formatMoneyFull(remainingBalance()):'₦0.00';
   var homeBal=document.getElementById('homeWalletBal'); if(homeBal) homeBal.textContent=bal;
   var bankBal=document.getElementById('walletBal'); if(bankBal) bankBal.textContent=bal;
@@ -804,7 +883,7 @@ function renderGrantState(){
     if(bankStatus) bankStatus.textContent='Approved — Grant credited';
   } else if(submitted){
     if(homeStatus) homeStatus.textContent='Status · Pending';
-    if(bankStatus && step>=5) bankStatus.textContent='Pending — Waiting for Approval';
+    if(bankStatus && step>=7) bankStatus.textContent='Pending — Waiting for Approval';
   }
   var badge=document.getElementById('pendingBadge'), title=document.getElementById('pendingTitle'), icon=document.getElementById('pendingIcon');
   if(badge&&title&&icon&&submitted){
@@ -814,7 +893,7 @@ function renderGrantState(){
       icon.classList.add('approved'); icon.innerHTML='✓';
       var sum=document.getElementById('successSummary');
       if(sum && sum.textContent.indexOf('Pending')>=0) sum.textContent=sum.textContent.replace('Pending — Waiting for Approval','Approved — Grant Credited');
-      if(step===7) document.getElementById('stepTitle').textContent='Approved — Grant Credited';
+      if(step===9) document.getElementById('stepTitle').textContent='Approved — Grant Credited';
     } else {
       badge.textContent='Pending'; badge.classList.remove('approved');
       title.textContent='Waiting for Approval';
@@ -834,12 +913,13 @@ function draftKey(){
   return 'fgsg_draft_v1_'+(e||'guest');
 }
 function draftHasProgress(d){
-  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
+  return d.step>1||!!(d.name||d.dob||d.state||d.lga||d.type||d.level||d.school||d.dept||d.nin||d.bank||d.acct||d.acctName||d.liveDone||d.feeDone||d.jambName||d.feesName||d.matric||d.cgpa||d.resultName||d.studentIdName||d.originName||d.birthName||d.passportName||d.parentsStatus||d.phone||d.noOtherScholarship||d.submittedAt||d.withdrawBank||d.withdrawAcct||d.withdrawDone||d.withdrawQueuedAmt||d.withdrawAmtText||d.withdrawTotal||(d.withdrawHistory&&d.withdrawHistory.length)||d.feePaidAt);
 }
 function collectDraft(){
   var payEl=document.querySelector('input[name="pay"]:checked');
   var wBankEl=document.getElementById('fWithdrawBank'), wAcctEl=document.getElementById('wAcct'), wAmtEl=document.getElementById('wAmount');
-  return {step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===7&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
+  var noSchEl=document.getElementById('fNoOtherScholarship');
+  return {v:2,step:step,name:val('fName'),dob:val('fDob'),state:val('fState'),lga:val('fLga'),type:val('fType'),level:val('fLevel'),school:val('fSchool'),dept:val('fDept'),nin:val('fNin'),matric:val('fMatric'),cgpa:val('fCgpa'),resultName:draftResultName,studentIdName:draftStudentIdName,originName:draftOriginName,birthName:draftBirthName,passportName:draftPassportName,parentsStatus:val('fParentsStatus'),phone:val('fPhone'),noOtherScholarship:!!(noSchEl&&noSchEl.checked),pay:payEl?payEl.value:'Grant Wallet',bank:val('fBank'),acct:val('fAcct'),acctName:val('fAcctName'),liveDone:!!liveDone,feeDone:!!feeDone,feePaidAt:draftFeePaidAt||0,feeRef:draftFeeRef||'',jambName:draftJambName,feesName:draftFeesName,appRef:draftAppRef,submitted:step===9&&!!draftAppRef,submittedAt:draftSubmittedAt||0,withdrawBank:wBankEl?wBankEl.value.trim():'',withdrawAcct:wAcctEl?wAcctEl.value.trim():'',withdrawName:withdrawAcctName||'',withdrawVerified:!!withdrawVerified,withdrawDone:!!withdrawDone,withdrawQueuedAmt:withdrawQueuedAmt||0,withdrawTotal:withdrawTotal||0,withdrawHistory:withdrawHistory||[],withdrawAmtText:wAmtEl?wAmtEl.value.trim():''};
 }
 function saveDraft(){
   try{
@@ -858,6 +938,9 @@ function restoreDraft(){
   try{ var raw=localStorage.getItem(key); if(raw) d=JSON.parse(raw); }catch(e){}
   if(!d) return;
   setField('fName',d.name); setField('fDob',d.dob); setField('fNin',d.nin);
+  setField('fMatric',d.matric); setField('fCgpa',d.cgpa);
+  setField('fParentsStatus',d.parentsStatus); setField('fPhone',d.phone);
+  var noSchRestore=document.getElementById('fNoOtherScholarship'); if(noSchRestore) noSchRestore.checked=!!d.noOtherScholarship;
   setField('fAcct',d.acct); setField('fAcctName',d.acctName);
   if(d.state) pickerSetValue('state',d.state);
   if(d.lga) pickerSetValue('lga',d.lga);
@@ -894,8 +977,14 @@ function restoreDraft(){
   document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value===payVal); });
   document.getElementById('bankFields').style.display= payVal==='Bank Account' ? 'grid':'none';
   draftJambName=d.jambName||''; draftFeesName=d.feesName||'';
+  draftResultName=d.resultName||''; draftStudentIdName=d.studentIdName||'';
+  draftOriginName=d.originName||''; draftBirthName=d.birthName||''; draftPassportName=d.passportName||'';
   if(draftJambName){ var okJ=document.getElementById('okJamb'); okJ.style.display='block'; okJ.textContent='✓ '+draftJambName+' attached'; }
   if(draftFeesName){ var okF=document.getElementById('okFees'); okF.style.display='block'; okF.textContent='✓ '+draftFeesName+' attached'; }
+  [['draftResultName','okResult'],['draftStudentIdName','okStudentId'],['draftOriginName','okOrigin'],['draftBirthName','okBirth'],['draftPassportName','okPassport']].forEach(function(pair){
+    var nm=pair[0]==='draftResultName'?draftResultName:pair[0]==='draftStudentIdName'?draftStudentIdName:pair[0]==='draftOriginName'?draftOriginName:pair[0]==='draftBirthName'?draftBirthName:draftPassportName;
+    if(nm){ var okEl=document.getElementById(pair[1]); if(okEl){ okEl.style.display='block'; okEl.textContent='✓ '+nm+' attached'; } }
+  });
   if(d.liveDone){ liveDone=true; if(typeof liveSetEntry==='function'){ liveSetEntry('✓ Liveness confirmed','ok'); document.getElementById('liveOpenBtn').textContent='Scan Again'; } }
   if(d.feeDone){ feeDone=true; document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000'; var fp=document.getElementById('feePending'); if(fp) fp.style.display='flex'; document.getElementById('walletStatus').textContent='Pending — Waiting for Approval'; }
   draftAppRef=d.appRef||'';
@@ -911,10 +1000,14 @@ function restoreDraft(){
     document.getElementById('bankSummary').innerHTML='<b>'+esc(payVal)+'</b>'+(payVal==='Bank Account'&&d.bank?' · <b>'+esc(d.bank)+'</b> •••'+esc((d.acct||'').slice(-3)||'000'):'');
     document.getElementById('walletStatus').textContent='Pending — Waiting for Approval';
   }
-  step=Math.min(7,Math.max(1,+d.step||1));
+  step=Math.min(9,Math.max(1,+d.step||1));
+  /* Drafts saved before Academic (4) and Background (5) were
+     added used the old numbering — shift their later steps
+     forward so a reopened draft lands on the same screen. */
+  if(d.v!==2 && !d.submitted){ if(step===4) step=6; else if(step===5) step=7; else if(step===6) step=8; else if(step===7) step=9; }
   /* Locked: a submitted application always reopens on its
      submitted screen, never back on an editable step. */
-  if(d.submitted && draftAppRef) step=7;
+  if(d.submitted && draftAppRef) step=9;
   renderStep();
   renderGrantState();
   var note=document.getElementById('draftSaved'); if(note && draftHasProgress(d)) note.textContent='Saved ✓';
@@ -937,19 +1030,20 @@ function restartApplication(){
   /* Locked ONLY after submission: a submitted application cannot
      be restarted, cancelled or replaced. Before submission — on
      any step — Cancel & Restart clears the draft and starts over. */
-  if(isSubmitted()||step===7){ toast('Application already submitted — it cannot be cancelled or restarted'); return; }
+  if(isSubmitted()||step===9){ toast('Application already submitted — it cannot be cancelled or restarted'); return; }
   if(!restartArmed){ setRestartArmed(true); return; }
   setRestartArmed(false);
   var btn=document.getElementById('restartAppBtn');
   try{ localStorage.removeItem(draftKey()); }catch(e){}
-  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fBank','fAcct','fAcctName','fWithdrawBank'].forEach(function(id){ setField(id,''); });
+  ['fName','fDob','fState','fLga','fType','fLevel','fSchool','fDept','fNin','fMatric','fCgpa','fParentsStatus','fPhone','fBank','fAcct','fAcctName','fWithdrawBank'].forEach(function(id){ setField(id,''); });
+  var noSchClear=document.getElementById('fNoOtherScholarship'); if(noSchClear) noSchClear.checked=false;
   var wAcctClear=document.getElementById('wAcct'); if(wAcctClear) wAcctClear.value='';
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
   withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; withdrawTotal=0; withdrawHistory=[]; withdrawJustQueued=false; draftFeePaidAt=0; draftFeeRef=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
   Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
-  draftJambName=''; draftFeesName=''; draftAppRef=''; draftSubmittedAt=0;
-  ['upJamb','upFees'].forEach(function(id){ document.getElementById(id).value=''; });
-  ['okJamb','okFees'].forEach(function(id){ document.getElementById(id).style.display='none'; });
+  draftJambName=''; draftFeesName=''; draftResultName=''; draftStudentIdName=''; draftOriginName=''; draftBirthName=''; draftPassportName=''; draftAppRef=''; draftSubmittedAt=0;
+  ['upJamb','upFees','upResult','upStudentId','upOrigin','upBirth','upPassport'].forEach(function(id){ document.getElementById(id).value=''; });
+  ['okJamb','okFees','okResult','okStudentId','okOrigin','okBirth','okPassport'].forEach(function(id){ document.getElementById(id).style.display='none'; });
   document.querySelectorAll('input[name="pay"]').forEach(function(r){ r.checked=(r.value==='Grant Wallet'); });
   document.getElementById('bankFields').style.display='none';
   liveDone=false; if(typeof liveReset==='function') liveReset();
@@ -969,7 +1063,7 @@ if(restartBtnEl) restartBtnEl.addEventListener('click',restartApplication);
 var appFormEl=document.getElementById('appForm');
 if(appFormEl){ appFormEl.addEventListener('input',saveDraft); appFormEl.addEventListener('change',saveDraft); }
 window.addEventListener('pagehide',saveDraft);
-window.addEventListener('load',function(){ restoreDraft(); renderWalletId(); renderGrantState(); });
+window.addEventListener('load',function(){ restoreDraft(); renderWalletId(); renderGrantState(); if(typeof fgsgRefreshSerial==='function') fgsgRefreshSerial(); });
 renderWalletId();
 /* ---------- Withdraw Grant wiring ---------- */
 var bankWithdrawBtnEl=document.getElementById('bankWithdrawBtn');

@@ -145,6 +145,8 @@ section.block{max-width:var(--wrap);margin:0 auto;padding:var(--section-y) var(-
 .auth-msg.show{display:block}
 .auth-msg.err{background:#fdf0ef;border:1px solid #b3261e;color:#7c1a14}
 .auth-msg.ok{background:#eef7ee;border:1px solid var(--green);color:#274435}
+.profile-serial-row{font-size:15px;color:#274435;margin-top:12px}
+.profile-serial-row b{color:var(--green)}
 .account-box{background:#f2f9f2;border:1.5px solid var(--green);border-radius:14px;padding:16px 18px;font-size:15px;line-height:1.65;margin-top:16px;color:#274435}
 .account-box span{color:#4c554c;font-size:14px}
 .auth-back{display:block;text-align:center;margin-top:var(--s6);padding:var(--s2);color:var(--lime-soft);font-weight:700;text-decoration:none}
@@ -200,7 +202,12 @@ section.block{max-width:var(--wrap);margin:0 auto;padding:var(--section-y) var(-
 label.f{display:block;font-weight:700;font-size:14px;line-height:1.45}
 label.f span.req{color:var(--green)}
 label.f small{display:block;font-weight:500;color:#667066;margin-top:3px}
-input[type=text],input[type=email],input[type=password],input[type=date],select,textarea{width:100%;margin-top:var(--s2);padding:10px 12px;border:1.5px solid #9aa79a;border-radius:10px;font:inherit;font-size:14.5px;background:#fff;color:#0b0d0b;min-height:42px}
+input[type=text],input[type=email],input[type=password],input[type=date],input[type=tel],select,textarea{width:100%;margin-top:var(--s2);padding:10px 12px;border:1.5px solid #9aa79a;border-radius:10px;font:inherit;font-size:14.5px;background:#fff;color:#0b0d0b;min-height:42px}
+/* scholarship confirmation — Background details step */
+.confirm-check{display:flex;gap:var(--s3);align-items:flex-start;border:2px solid #9aa79a;border-radius:12px;padding:16px;margin-top:20px;cursor:pointer;font-size:14.5px;line-height:1.55;font-weight:600;transition:transform .08s ease}
+.confirm-check:active{transform:scale(.99)}
+.confirm-check input{accent-color:var(--green);width:22px;height:22px;flex:0 0 22px;margin-top:2px}
+.confirm-check:has(input:checked){border-color:var(--green);background:#f2f9f2;box-shadow:4px 4px 0 var(--green)}
 input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,163,92,.35);border-color:var(--green)}
 .upload{border:2px dashed #7d8a7d;border-radius:12px;padding:16px var(--s3);text-align:center;background:#fafbfa}
 .upload b{display:block;font-size:15px;margin-bottom:var(--s2)}
@@ -745,3 +752,200 @@ body.in-portal .dock{display:block}
   .nav-bubble{transition:none}
   .page.anim-fwd,.page.anim-back,.view.anim-fwd,.view.anim-back,.fstep.anim-fwd,.fstep.anim-back{animation:none}
 }
+
+/* ============================================================
+   FLOATING PILL NAVBAR — reference rebuild (2026-11-20)
+   This section supersedes every earlier .dock / .nav-bubble
+   rule above. The portal surface the pill floats on is the
+   soft light grey #EEEEEE; the pill itself is white, 715px x
+   100px on desktop with a 40px radius, centred and locked to
+   the bottom of the screen. A radial mask cuts a smooth,
+   symmetrical circular notch into the pill's top centre,
+   centred exactly on the raised centre button, so the pill
+   curves around it instead of the button sitting on a plain
+   bar. The centre button is always botanical green #29936F
+   with the white sprout outline, in every active state.
+   Side destinations: thin line icons only, no labels —
+   #C5C5C5 inactive, #29936F active with an 11px green dot
+   directly underneath the icon.
+   ============================================================ */
+.shell-wrap{background:#EEEEEE}
+.dock{
+  --fab:92px;
+  --notch-r:57px;
+  --notch-cy:-11px;
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  bottom:calc(18px + env(safe-area-inset-bottom,0px));
+  width:min(715px,calc(100% - 24px));
+  height:100px;
+  max-width:none;
+  margin:0;
+  padding:0;
+  background:transparent;
+  border:none;
+  border-radius:0;
+  box-shadow:none;
+  display:none;
+  overflow:visible;
+  z-index:50;
+}
+body.in-portal .dock{display:block}
+/* the white pill, with the notch carved out of its top edge:
+   the mask circle shares the centre button's centre point,
+   so the recess stays perfectly round at any dock width */
+.dock-pill{
+  position:absolute;inset:0;
+  background:#ffffff;
+  border-radius:40px;
+  filter:drop-shadow(0 14px 28px rgba(23,43,34,.14));
+  -webkit-mask-image:radial-gradient(circle var(--notch-r) at 50% var(--notch-cy),transparent calc(var(--notch-r) - 1px),#000 var(--notch-r));
+  mask-image:radial-gradient(circle var(--notch-r) at 50% var(--notch-cy),transparent calc(var(--notch-r) - 1px),#000 var(--notch-r));
+}
+/* five evenly distributed destinations: columns 1, 2, 4, 5
+   hold the line icons; column 3 is the notch, under the
+   raised centre button */
+.dock-row{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  align-items:stretch;
+  height:100%;
+  padding:6px 10px;
+}
+.dock .dock-row button{
+  grid-row:1;
+  position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:7px;
+  min-width:0;min-height:56px;
+  padding:10px 4px 8px;
+  background:transparent;border:none;border-radius:20px;
+  color:#C5C5C5;
+  transition:color .3s ease,transform .12s ease;
+}
+.dock .dock-row button:nth-child(1){grid-column:1}
+.dock .dock-row button:nth-child(2){grid-column:2}
+.dock .dock-row button:nth-child(3){grid-column:4}
+.dock .dock-row button:nth-child(4){grid-column:5}
+.dock .dock-row button svg{
+  width:27px;height:27px;flex:0 0 27px;
+  visibility:visible;
+  transition:stroke-width .3s ease;
+}
+.dock .dock-row button:active{transform:scale(.9)}
+.dock .dock-row button.active{
+  color:#29936F;
+  font-weight:700;
+}
+.dock .dock-row button.active svg{stroke-width:2.15;visibility:visible}
+/* the active indicator: an 11px green dot directly under the
+   icon; it fades/scales in on the newly selected destination
+   and out on the previous one — only one is ever visible */
+.dock-dot{
+  width:11px;height:11px;flex:0 0 11px;border-radius:50%;
+  background:#29936F;
+  opacity:0;transform:scale(.4);
+  transition:opacity .3s ease,transform .3s ease;
+}
+.dock .dock-row button.active .dock-dot{opacity:1;transform:scale(1)}
+.dock .badge{
+  position:absolute;top:calc(50% - 26px);right:calc(50% - 22px);
+  background:#29936F;color:#fff;
+  font-size:10.5px;font-weight:800;line-height:1;
+  min-width:18px;height:18px;padding:0 5px;border-radius:99px;
+  display:grid;place-items:center;
+}
+/* the raised centre button: perfectly circular, botanical
+   green in every state, centred exactly on the pill's top
+   edge and sitting in the notch the mask carves for it */
+.dock .dock-center{
+  position:absolute;z-index:2;
+  left:50%;top:calc(var(--notch-cy) - var(--fab)/2);
+  transform:translateX(-50%);
+  width:var(--fab);height:var(--fab);
+  min-height:var(--fab);
+  border-radius:50%;
+  background:#29936F;color:#ffffff;
+  border:none;
+  display:grid;place-items:center;
+  padding:0;
+  box-shadow:0 12px 24px rgba(41,147,111,.35),0 3px 8px rgba(41,147,111,.25);
+  transition:transform .12s ease,background .3s ease;
+}
+.dock .dock-center svg{width:42px;height:42px}
+/* the centre button never follows the side tabs' active styling:
+   green background and white icon whichever destination is active */
+.dock .dock-center.active{background:#29936F;color:#ffffff}
+.dock .dock-center:active{transform:translateX(-50%) scale(.93)}
+.dock .dock-center:focus-visible{outline:3px solid #29936F;outline-offset:3px}
+.dock .dock-row button:focus-visible{outline:3px solid #29936F;outline-offset:-3px}
+/* room at the end of the portal so the floating pill never
+   covers the last content, and toasts clear the pill */
+.shell{padding-bottom:158px}
+.toast{bottom:146px}
+
+/* mobile: the pill takes 90–94% of the screen width and the
+   proportions scale down together — the centre button stays
+   perfectly centred and the notch stays a true circle */
+@media(max-width:640px){
+  .dock{
+    --fab:70px;
+    --notch-r:44px;
+    --notch-cy:-8px;
+    width:min(94vw,calc(100% - 16px));
+    height:80px;
+    bottom:calc(12px + env(safe-area-inset-bottom,0px));
+  }
+  .dock-pill{border-radius:32px}
+  .dock-row{padding:4px 6px}
+  .dock .dock-row button svg{width:24px;height:24px;flex-basis:24px}
+  .dock .dock-center svg{width:32px;height:32px}
+  .dock-dot{width:9px;height:9px;flex-basis:9px}
+  .shell{padding-bottom:132px}
+  .toast{bottom:118px}
+}
+@media(prefers-reduced-motion:reduce){
+  .dock .dock-row button,.dock .dock-row button svg,.dock-dot,.dock .dock-center{transition:none}
+}
+
+/* ---------- per-item review: student side ---------- */
+.sr-card{background:#fff;border:1.5px solid #0b0d0b;border-radius:16px;box-shadow:5px 5px 0 var(--green);padding:22px;max-width:860px;margin:20px auto 0;text-align:left}
+.sr-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.sr-head h3{font-size:20px;line-height:1.25}
+.sr-summary{font-size:14px;font-weight:700;color:#44554a;line-height:1.55;margin-top:8px}
+.sr-subhead{font-family:"Archivo",sans-serif;font-size:16px;margin:20px 0 4px}
+.sr-pill{display:inline-block;border-radius:999px;padding:4px 11px;font-size:11px;font-weight:900;letter-spacing:.06em;text-transform:uppercase;line-height:1.3;white-space:nowrap}
+.sr-pill.accepted{background:#eef7ee;color:#0b6b3a;border:1px solid var(--green)}
+.sr-pill.declined{background:#fdf0ef;color:#7c1a14;border:1px solid #b3261e}
+.sr-pill.resend{background:#fff8e6;color:#7c4a03;border:1px solid #d97706}
+.sr-pill.resubmitted{background:#eef4ff;color:#1d3a6b;border:1px solid #3b5bdb}
+.sr-pill.waiting{background:#f1f3f1;color:#44554a;border:1px solid #9aa79a}
+.sr-item{border:1.5px solid #e3e8e3;border-radius:12px;padding:15px;margin-top:12px}
+.sr-item.flagged.declined{border-color:#b3261e;background:#fdf6f5}
+.sr-item.flagged.resend{border-color:#d97706;background:#fffaf0}
+.sr-item-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.sr-item-head b{font-family:"Archivo",sans-serif;font-size:15.5px;line-height:1.3}
+.sr-current,.sr-reason{font-size:14px;line-height:1.55;margin-top:8px;font-weight:600;word-break:break-word}
+.sr-current span,.sr-reason span{font-weight:900;text-transform:uppercase;font-size:11px;letter-spacing:.07em;color:#5c6f63;display:block}
+.sr-reason{color:#7c1a14}
+.sr-label{display:block;font-weight:700;font-size:13.5px;margin-top:13px}
+.sr-label input,.sr-label select{width:100%;margin-top:6px}
+.sr-resubmit{width:100%;margin-top:13px;min-height:48px}
+.sr-msg{display:none;border-radius:10px;padding:10px 12px;font-size:13.5px;line-height:1.5;font-weight:600;margin-top:11px}
+.sr-msg.show{display:block}
+.sr-msg.err{background:#fdf0ef;border:1px solid #b3261e;color:#7c1a14}
+.sr-msg.ok{background:#eef7ee;border:1px solid var(--green);color:#274435}
+.sr-history{margin-top:12px;border-top:1px dashed #c9d2c9;padding-top:10px;display:grid;gap:7px}
+.sr-history-title{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#00713f}
+.sr-history-row{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;font-size:12.5px;font-weight:600;color:#44554a;line-height:1.5}
+.sr-history-reason{color:#7c1a14}
+.sr-details{margin-top:18px;border-top:1px solid #e3e8e3;padding-top:14px}
+.sr-details summary{cursor:pointer;font-weight:800;font-size:14.5px;min-height:42px;display:flex;align-items:center}
+.sr-all{display:grid;margin-top:6px}
+.sr-row{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eef1ee}
+.sr-row-main b{display:block;font-size:14.5px;line-height:1.35}
+.sr-row-main span{display:block;font-size:13px;font-weight:600;color:#5c6f63;line-height:1.5;margin-top:2px;word-break:break-word}
+.sr-row-main .sr-row-reason{color:#7c1a14}
+#studentReviewApp .sr-card{margin:0 auto 20px}
