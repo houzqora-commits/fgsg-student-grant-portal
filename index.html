@@ -533,11 +533,19 @@
 
 <!-- ADMIN PAGE — #/admin ONLY (fgsg.site/#/admin). No link,
      button, menu entry or /admin route leads here.
-     Its own login screen, separate from the student login:
+     One visible login only, separate from the student login:
      Username Admin with the generated admin password
      (checked against its SHA-256 hash in admin.js — the
-     password itself is never in the code). That login alone
-     opens the dashboard. Login state is in-memory only.
+     password itself is never in the code), button
+     "Log in to Admin →". No second Supabase login form.
+     After the hash check passes, admin.js automatically
+     signs the admin into Supabase in the background as
+     admin@fgsg.site with the same typed password
+     (fgsgSignIn); only if that succeeds does the dashboard
+     open. If it fails, the login screen shows the setup
+     error and the dashboard stays closed. Admin logout
+     also signs out of Supabase (fgsgSignOut, best-effort).
+     Login state is in-memory only.
      Student header and footer are hidden while this page
      is open (body.in-admin). -->
 <div class="page" id="page-admin">
@@ -728,7 +736,7 @@
 <script src="assets/liveness.js?v=20"></script>
 <script src="assets/payment.js?v=27"></script>
 <script src="assets/reviews.js?v=3"></script>
-<script src="assets/admin.js?v=9"></script>
+<script src="assets/admin.js?v=10"></script>
 <script src="assets/dock.js?v=2"></script>
 </body>
 </html>

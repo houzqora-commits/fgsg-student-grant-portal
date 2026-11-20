@@ -6,8 +6,9 @@
    button or menu entry to this panel anywhere on the site —
    typing #/admin is the only way in.
 
-   ADMIN LOGIN — Username Admin + the generated admin
-   password. That login alone opens the dashboard.
+   ADMIN LOGIN — one visible login only: Username Admin
+   + the generated admin password, button "Log in to
+   Admin →". There is no second Supabase login form.
    The password itself is never in this file — only its
    SHA-256 hash (ADMIN_PASS_SHA256 below); what is typed is
    hashed in the browser and compared against that hash.
@@ -15,6 +16,17 @@
    with the site source outside the served website files.
    Login state lives in memory only — no browser-storage
    flag opens the dashboard.
+   After that hash check passes, the admin is automatically
+   signed into Supabase in the background with
+   fgsgSignIn('admin@fgsg.site', <same typed password>) —
+   no extra step for the user. Only if that Supabase
+   sign-in succeeds does the dashboard open, so dashboard
+   data loads as that signed-in admin account and the
+   Supabase admin RLS policies apply. If it fails (account
+   not created yet, or password does not match the
+   Supabase account), the dashboard stays closed and the
+   login screen shows the setup error. Admin logout also
+   signs out of Supabase via fgsgSignOut (best-effort).
 
    Data is live from Supabase (applications, documents,
    payments, withdrawals, transactions, profiles) through the
@@ -31,6 +43,8 @@ var _adminAuthed = false; /* in-memory only, never stored */
    outside the served files — never in this code). */
 var ADMIN_USER = 'Admin';
 var ADMIN_PASS_SHA256 = '87250b35dadf34a3334e5190a174ff40eabc41d3846b57bd5461bceb72c54f8d';
+var ADMIN_SUPABASE_EMAIL = 'admin@fgsg.site';
+var SUPABASE_SETUP_MSG = 'The Supabase admin account is not set up yet — create admin@fgsg.site in Supabase with the same Admin password and mark it admin, then try again.';
 
 function $(id){ return document.getElementById(id); }
 function esc(s){ return (typeof escapeHtml === 'function') ? escapeHtml(s == null ? '' : String(s)) : String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -53,8 +67,9 @@ function isAdminRoute(){
 }
 function isAdminAuthed(){ return _adminAuthed === true; }
 function setAdminAuthed(on){ _adminAuthed = !!on; }
-/* The dashboard opens on the Admin login alone: Username
-   Admin + the generated password. */
+/* The dashboard opens only after BOTH checks pass: the
+   Admin username/password hash check, then the automatic
+   background Supabase sign-in as admin@fgsg.site. */
 function openDashboard(){
   setAdminAuthed(true);
   showDashboard();
@@ -95,6 +110,13 @@ function showDashboard(){
 }
 function adminLogout(){
   setAdminAuthed(false);
+  /* Also sign out of Supabase — best-effort, never blocks logout. */
+  try {
+    if (typeof fgsgSignOut === 'function'){
+      var outPromise = fgsgSignOut();
+      if (outPromise && typeof outPromise.catch === 'function') outPromise.catch(function(){});
+    }
+  } catch(e){}
   state.apps = []; state.reviews = []; state.selectedId = null;
   resetLoginGate();
   showAdminLogin();
@@ -133,13 +155,30 @@ function adminGateLogin(){
   var btn = $('adminLoginBtn');
   if (btn){ btn.disabled = true; btn.textContent = 'Checking…'; }
   sha256Hex(password).then(function(hex){
-    if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
     if (hex !== ADMIN_PASS_SHA256){
+      if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
       setGateMsg('Username or password is not correct');
       return;
     }
-    if (passEl) passEl.value = '';
-    openDashboard();
+    /* Admin password passed — automatically sign into Supabase
+       in the background with the same password just typed.
+       No extra step, no second form. Only on success does
+       the dashboard open. */
+    if (btn){ btn.disabled = true; btn.textContent = 'Signing in…'; }
+    if (typeof fgsgSignIn !== 'function'){
+      if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
+      setGateMsg(SUPABASE_SETUP_MSG);
+      return;
+    }
+    fgsgSignIn(ADMIN_SUPABASE_EMAIL, password).then(function(){
+      if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
+      if (passEl) passEl.value = '';
+      openDashboard();
+    }).catch(function(){
+      if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
+      setAdminAuthed(false);
+      setGateMsg(SUPABASE_SETUP_MSG);
+    });
   }).catch(function(){
     if (btn){ btn.disabled = false; btn.textContent = 'Log in to Admin →'; }
     setGateMsg('The admin password could not be checked — try again');
