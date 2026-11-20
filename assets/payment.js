@@ -119,7 +119,7 @@ function renderProfile(){
       Academic / Background fields (matric, parents'
       status, phone, no-other-scholarship confirmation) onto
       that same applications row; 2) every uploaded file — JAMB
-      letter, fees receipt, statement of result, O'Level
+      letter, fees receipt, O'Level
       results, certificate of origin and birth certificate — to the
       student-documents bucket plus their documents rows.
    The Pending UI below never waits on this; failures are
@@ -141,7 +141,6 @@ function syncApplicationToSupabase(ref){
     {file:fileOf('upJamb'), kind:'jamb_letter'},
     {file:fileOf('upFees'), kind:'fees_receipt'},
     {file:fileOf('upNin'), kind:'nin_card'},
-    {file:fileOf('upResult'), kind:'semester_result'},
     {file:fileOf('upOlevel'), kind:'olevel_result'},
     {file:fileOf('upOrigin'), kind:'certificate_of_origin'},
     {file:fileOf('upBirth'), kind:'birth_certificate'}
@@ -149,15 +148,28 @@ function syncApplicationToSupabase(ref){
   var chain=fgsgSaveApplication(form, ref).then(function(row){
     var appId=row?row.id:null;
     if(!appId) return null;
-    var jobs=[];
+    /* Documents go up ONE AT A TIME, never all at once: reading
+       several full-size photos/PDFs into memory in parallel is
+       what triggered the low-memory failure on phones. Each file
+       is shrunk first when it is a large photo (inside
+       fgsgUploadAndRecordDocument) and its reference here is
+       dropped as soon as its own upload finishes, so only one
+       file is ever in flight. One bad file no longer blocks the
+       documents after it. */
+    var seq=Promise.resolve();
     docFiles.forEach(function(d){
-      if(d.file && typeof fgsgUploadDocument==='function'){
-        jobs.push(fgsgUploadDocument(d.file, ref, d.kind).then(function(path){
-          if(typeof fgsgRecordDocument==='function') return fgsgRecordDocument(appId, d.kind, path, d.file);
-        }));
-      }
+      if(!d.file || typeof fgsgUploadDocument!=='function') return;
+      seq=seq.then(function(){
+        var job=(typeof fgsgUploadAndRecordDocument==='function')
+          ? fgsgUploadAndRecordDocument(d.file, ref, d.kind, appId)
+          : fgsgUploadDocument(d.file, ref, d.kind).then(function(path){
+              if(typeof fgsgRecordDocument==='function') return fgsgRecordDocument(appId, d.kind, path, d.file);
+            });
+        return job.catch(function(){ /* one failed document must not stop the rest */ })
+          .then(function(){ d.file=null; /* release the file — only its name stays in the draft */ });
+      });
     });
-    return Promise.all(jobs);
+    return seq;
   }).then(function(){
     /* The live serial follows the new live count in Supabase. */
     if(typeof fgsgRefreshSerial==='function') return fgsgRefreshSerial();

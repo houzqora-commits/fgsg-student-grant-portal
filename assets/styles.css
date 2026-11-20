@@ -333,6 +333,16 @@ input:focus,select:focus,textarea:focus{outline:3px solid rgba(0,163,92,.35);bor
   .sheet-overlay.kb-open{align-items:flex-start;padding-top:24px}
   .sheet-overlay.kb-open .sheet{max-height:calc(100dvh - 48px)}
 }
+/* Institution Type ONLY (class added by openPicker for that one
+   field): with just 3 options its sheet is short, so the search
+   box sits low on the screen. Tapping it focuses the box, the
+   sheet jumps to the top (kb-open), the tap then lands on the
+   dimmed backdrop and the sheet closes before any typing — the
+   search could never be used. Giving this one sheet the same
+   tall geometry as the long lists (State, School, Bank…) keeps
+   its search box up where theirs sits, so the tap stays inside
+   the sheet and search works exactly like every other picker. */
+.sheet-overlay.picker-type .sheet{min-height:min(540px,62dvh)}
 .sheet-head{background:#0b0f0b;color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;gap:var(--s3)}
 .sheet-head b{font-family:"Archivo";font-size:19px;line-height:1.2;display:block}
 .sheet-head span{color:var(--lime-soft);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}

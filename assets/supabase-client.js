@@ -50,15 +50,74 @@ async function fgsgCurrentUserAsync() {
   return (res && res.data) ? (res.data.user || null) : null;
 }
 
-/* --- Documents: student-documents/<user-id>/<ref>/<kind>-<filename> --- */
+/* --- Documents: student-documents/<user-id>/<ref>/<kind>-<filename> ---
+   LOW-MEMORY UPLOADS. A phone photo can be 5–15 MB and tens of
+   megapixels; reading several of those into memory at once (the
+   old submit flow uploaded all six documents in parallel) is
+   what killed the application on low-memory phones. So:
+   - a large photo is shrunk ONCE before it is sent — longest
+     side capped at 1600px, re-encoded as JPEG — and the
+     full-size decode is released immediately;
+   - PDFs and small files pass through untouched;
+   - files are sent as the binary File/Blob itself, never
+     base64 (base64 would add a third again in memory);
+   - callers upload ONE file at a time and drop their reference
+     as soon as it is sent (see payment.js / reviews.js), so the
+     peak is a single prepared file, not the whole set. */
+var FGSG_UPLOAD_MAX_SIDE = 1600;
+var FGSG_UPLOAD_COMPRESS_OVER = 1200 * 1024; /* shrink images bigger than ~1.2 MB */
+async function fgsgPrepareUploadFile(file) {
+  if (!file || !/^image\//i.test(file.type || '') || /gif|svg/i.test(file.type)) return file;
+  if ((file.size || 0) <= FGSG_UPLOAD_COMPRESS_OVER) return file;
+  if (typeof createImageBitmap !== 'function' || typeof document === 'undefined') return file;
+  var bmp = null;
+  var canvas = null;
+  try {
+    bmp = await createImageBitmap(file);
+    var w = bmp.width || 0, h = bmp.height || 0;
+    var longest = Math.max(w, h);
+    if (!longest || longest <= FGSG_UPLOAD_MAX_SIDE) { if (bmp.close) bmp.close(); return file; }
+    var scale = FGSG_UPLOAD_MAX_SIDE / longest;
+    canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
+    var ctx = canvas.getContext('2d');
+    if (!ctx) { if (bmp.close) bmp.close(); return file; }
+    ctx.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    if (bmp.close) bmp.close(); bmp = null; /* full-size decode released */
+    var blob = await new Promise(function (res) {
+      if (canvas.toBlob) canvas.toBlob(res, 'image/jpeg', 0.85); else res(null);
+    });
+    canvas.width = 1; canvas.height = 1; /* release the canvas backing store */
+    if (!blob || !blob.size || blob.size >= file.size) return file;
+    var name = String(file.name || 'photo').replace(/\.[a-z0-9]+$/i, '') + '.jpg';
+    try { return new File([blob], name, { type: 'image/jpeg' }); }
+    catch (e) { try { blob.name = name; } catch (e2) {} return blob; }
+  } catch (e) {
+    if (bmp && bmp.close) { try { bmp.close(); } catch (e3) {} }
+    return file; /* any failure: send the original file */
+  }
+}
 async function fgsgUploadDocument(file, applicationRef, kind) {
   if (!fgsgDb) throw new Error('Supabase is not available.');
   var user = await fgsgCurrentUserAsync();
   if (!user) throw new Error('Log in first.');
-  var safeName = String(file.name || 'document').replace(/[^\w.\-]+/g, '_');
+  var send = await fgsgPrepareUploadFile(file);
+  var safeName = String(send.name || 'document').replace(/[^\w.\-]+/g, '_');
   var path = user.id + '/' + applicationRef + '/' + kind + '-' + safeName;
-  var up = await fgsgDb.storage.from('student-documents').upload(path, file, { upsert: true, contentType: file.type || undefined });
+  var up = await fgsgDb.storage.from('student-documents').upload(path, send, { upsert: true, contentType: send.type || undefined });
   if (up.error) throw up.error;
+  return path;
+}
+/* Upload one document and write its documents row with the
+   name/size of the file actually sent (the shrunk photo, when
+   it was shrunk). Returns the storage path. */
+async function fgsgUploadAndRecordDocument(file, applicationRef, kind, applicationId) {
+  var prepared = await fgsgPrepareUploadFile(file);
+  var path = await fgsgUploadDocument(prepared, applicationRef, kind);
+  if (applicationId && typeof fgsgRecordDocument === 'function') {
+    await fgsgRecordDocument(applicationId, kind, path, prepared);
+  }
   return path;
 }
 async function fgsgRecordDocument(applicationId, kind, storagePath, file) {
@@ -109,7 +168,7 @@ async function fgsgSaveApplication(form, reference) {
      yet the update is skipped and the application save above
      still stands — the submission flow never breaks. The new
      document uploads travel separately as documents rows
-     (semester_result, olevel_result,
+     (olevel_result,
      certificate_of_origin, birth_certificate). */
   if (row && row.id && (form.fMatric || form.fPhone || form.fParentsStatus)) {
     try {
@@ -317,7 +376,6 @@ var FGSG_REVIEW_ITEMS = [
   {key:'payout', label:'Payout details', kind:'field', column:null, fieldId:null, inputType:'text'},
   {key:'doc_jamb_letter', label:'JAMB Admission Letter', kind:'document', docKind:'jamb_letter', uploadId:'upJamb'},
   {key:'doc_fees_receipt', label:'Last School Fees Receipt', kind:'document', docKind:'fees_receipt', uploadId:'upFees'},
-  {key:'doc_semester_result', label:'Statement of Result', kind:'document', docKind:'semester_result', uploadId:'upResult'},
   {key:'doc_olevel_result', label:"O'Level Results: WAEC/NECO", kind:'document', docKind:'olevel_result', uploadId:'upOlevel'},
   {key:'doc_certificate_of_origin', label:'Certificate of Origin', kind:'document', docKind:'certificate_of_origin', uploadId:'upOrigin'},
   {key:'doc_birth_certificate', label:'Birth Certificate / Age Declaration', kind:'document', docKind:'birth_certificate', uploadId:'upBirth'}

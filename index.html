@@ -37,7 +37,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/styles.css?v=47">
+<link rel="stylesheet" href="assets/styles.css?v=48">
 <link rel="stylesheet" href="assets/admin.css?v=8">
 <link rel="stylesheet" href="assets/dock.css?v=2">
 </head>
@@ -127,7 +127,7 @@
   <div class="sec-head"><h2>Guide<span>lines</span></h2></div>
   <div class="guide-grid">
     <div class="guide-card"><h3>Who Can Apply</h3><ul><li>Students enrolled in a Nigerian university, polytechnic or college of education</li><li>All levels — ND, HND and 100 to 600 level</li><li>Applicants from all 36 states and the FCT</li><li>Grant amount: ₦50,000 per student</li></ul></div>
-    <div class="guide-card"><h3>What You Need</h3><ul><li>Email address and password for your account</li><li>JAMB admission letter</li><li>Last school fees receipt</li><li>NIN, date of birth, state of origin and LGA</li><li>Matric number</li><li>Statement of Result</li><li>O'Level Results: WAEC/NECO</li><li>Certificate of Origin and birth certificate</li><li>Phone number and parents' occupation / means of livelihood</li></ul></div>
+    <div class="guide-card"><h3>What You Need</h3><ul><li>Email address and password for your account</li><li>JAMB admission letter</li><li>Last school fees receipt</li><li>NIN, date of birth, state of origin and LGA</li><li>Matric number</li><li>O'Level Results: WAEC/NECO</li><li>Certificate of Origin and birth certificate</li><li>Phone number and parents' occupation / means of livelihood</li></ul></div>
     <div class="guide-card"><h3>Verification &amp; Payout</h3><ul><li>Face liveness check</li><li>₦3,000 verification fee — bank transfer</li><li>₦50,000 payout to your Grant Wallet</li></ul></div>
   </div>
 </section>
@@ -226,7 +226,6 @@
             <li>State of origin, LGA &amp; date of birth</li>
             <li>Last School Fees Receipt</li>
             <li>Matric number</li>
-            <li>Statement of Result</li>
             <li>O'Level Results: WAEC/NECO</li>
             <li>Certificate of Origin &amp; Birth Certificate</li>
           </ul>
@@ -261,7 +260,7 @@
           <h3>Personal details</h3>
           <div class="fgrid">
             <label class="f">Full name <span class="req">*</span><input type="text" id="fName" placeholder="e.g. Adaeze Chiamaka Okafor"></label>
-            <label class="f">Date of birth <span class="req">*</span><input type="date" id="fDob" min="1980-01-01" max="2016-12-31"></label>
+            <label class="f">Date of birth <span class="req">*</span><input type="date" id="fDob" min="1990-01-01" max="2016-12-31"></label>
             <div class="f-field">State of origin <span class="req">*</span>
               <button type="button" class="picker-btn" data-picker="state" aria-haspopup="dialog"><span class="picker-text ph" id="pickText-state">Select state…</span><svg class="picker-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
               <input type="hidden" id="fState">
@@ -301,9 +300,6 @@
           <h3>Academic details</h3>
           <div class="fgrid">
             <label class="f">Matric / Student Registration Number <span class="req">*</span><input type="text" id="fMatric" placeholder="e.g. U20CS1042" autocomplete="off"></label>
-          </div>
-          <div class="fgrid" style="margin-top:20px">
-            <div class="upload"><b>Current Semester Result / Statement of Result *</b><input type="file" id="upResult" accept=".pdf,image/*"><div class="file-ok" id="okResult">✓ Document attached</div></div>
           </div>
           <div class="fgrid" style="margin-top:20px">
             <div class="upload"><b>O'Level Results: WAEC/NECO *</b><input type="file" id="upOlevel" accept=".pdf,image/*"><div class="file-ok" id="okOlevel">✓ Document attached</div></div>
@@ -728,12 +724,12 @@
 <div class="toast" id="toast" role="status"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="assets/supabase-client.js?v=7"></script>
+<script src="assets/supabase-client.js?v=8"></script>
 <script src="assets/auth.js?v=23"></script>
-<script src="assets/app.js?v=44"></script>
+<script src="assets/app.js?v=45"></script>
 <script src="assets/liveness.js?v=20"></script>
-<script src="assets/payment.js?v=28"></script>
-<script src="assets/reviews.js?v=3"></script>
+<script src="assets/payment.js?v=29"></script>
+<script src="assets/reviews.js?v=4"></script>
 <script src="assets/admin.js?v=10"></script>
 <script src="assets/dock.js?v=2"></script>
 </body>

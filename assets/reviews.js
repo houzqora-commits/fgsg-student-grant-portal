@@ -212,8 +212,17 @@ async function resubmitItem(key, btn, container){
       var file = fileInput && fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
       if (!file) throw new Error('Choose the new file first');
       if (typeof fgsgUploadDocument !== 'function' || typeof fgsgRecordDocument !== 'function') throw new Error('Upload is not available');
-      var path = await fgsgUploadDocument(file, _myApp.reference || _myApp.id, def.docKind);
-      await fgsgRecordDocument(_myApp.id, def.docKind, path, file);
+      /* Same low-memory path as the main submit: a large photo
+         is shrunk before it is sent, the file goes up as binary,
+         and the input is cleared afterwards so the file itself
+         is released — only its recorded name stays. */
+      if (typeof fgsgUploadAndRecordDocument === 'function'){
+        await fgsgUploadAndRecordDocument(file, _myApp.reference || _myApp.id, def.docKind, _myApp.id);
+      } else {
+        var path = await fgsgUploadDocument(file, _myApp.reference || _myApp.id, def.docKind);
+        await fgsgRecordDocument(_myApp.id, def.docKind, path, file);
+      }
+      if (fileInput) fileInput.value = '';
     } else if (def.key === 'nin'){
       var ninInput = container.querySelector('[data-sr-input="' + key + '"]');
       var nin = ninInput ? ninInput.value.replace(/\s/g,'') : '';
