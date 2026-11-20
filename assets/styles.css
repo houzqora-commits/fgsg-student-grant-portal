@@ -663,15 +663,25 @@ footer b{color:#10231a}
    they cleared the sticky header */
 section[id],.hero[id]{scroll-margin-top:24px}
 
-/* ---- page sliding, restored ----
-   Switching pages, dashboard views or application steps slides
-   the incoming one sideways: forward (a later page / view /
-   step, Continue) comes in from the right, going back (Back, an
-   earlier tab) comes in from the left. JS adds .anim-fwd /
-   .anim-back on the switch and clears it when the run ends. */
-@keyframes slideInFwd{from{transform:translateX(64px);opacity:0}to{transform:translateX(0);opacity:1}}
+/* ---- page switching motion ----
+   Going back (Back, an earlier tab) slides the incoming page,
+   dashboard view or application step in from the left; JS adds
+   .anim-back on the switch and clears it when the run ends.
+   Forward switches (a later page / view / step, Continue) have
+   NO animation at all — no slide, no fade, no transform, no
+   opacity change: the incoming one is simply shown. The old
+   forward run (translateX(+64px) from opacity 0) blinked on
+   mobile: sliding in from the right pushed the incoming page
+   past the screen's right edge, and that right-hand overflow
+   expanded the scrollable area mid-run, so the new page
+   flashed and ghosted double over the old one and the fixed
+   bottom dock shifted with it. The back slide overflows off
+   the left edge instead, where it is clipped harmlessly —
+   that asymmetry was the whole bug. .anim-fwd is kept as an
+   explicit no-animation rule so no forward switch can ever
+   pick up a slide or fade again. */
 @keyframes slideInBack{from{transform:translateX(-64px);opacity:0}to{transform:translateX(0);opacity:1}}
-.page.anim-fwd,.view.anim-fwd,.fstep.anim-fwd{animation:slideInFwd .34s cubic-bezier(.25,.7,.3,1)}
+.page.anim-fwd,.view.anim-fwd,.fstep.anim-fwd{animation:none}
 .page.anim-back,.view.anim-back,.fstep.anim-back{animation:slideInBack .34s cubic-bezier(.25,.7,.3,1)}
 
 @media(prefers-reduced-motion:reduce){

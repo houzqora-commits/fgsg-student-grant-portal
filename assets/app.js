@@ -254,17 +254,28 @@ function renderSerial(){
 }
 
 /* ---------- page routing: landing / auth / app are separate pages ----------
-   Page changes slide sideways in the direction of travel: a
-   later page comes in from the right, going back comes in from
-   the left. */
+   Going back slides the incoming page in from the left.
+   Forward switches get NO slide and NO fade — the incoming
+   page is simply shown, instantly, exactly like the settled
+   end state of a back switch. The old forward slide
+   (translateX(+64px) fading in from opacity 0) pushed the
+   incoming page past the right edge of the screen: in a
+   left-to-right page that right-hand overflow expands the
+   scrollable area for the length of the run, so on mobile
+   the new page flashed, ghosted over the old one, looked
+   double and shoved the fixed bottom dock around. The back
+   slide's overflow falls off the left edge, where it is
+   clipped and never disturbs anything — which is why going
+   back was always smooth and going forward blinked. */
 var currentPageName='landing';
 var PAGE_ORDER={landing:0,auth:1,app:2,admin:3};
 var VIEW_ORDER={home:0,bank:1,application:2,notices:3,me:4};
 function slideIn(el,dir){
   if(!el) return;
   el.classList.remove('anim-fwd','anim-back');
+  if(dir!=='back') return; /* forward: instant show, no motion at all */
   void el.offsetWidth;
-  el.classList.add(dir==='back'?'anim-back':'anim-fwd');
+  el.classList.add('anim-back');
 }
 document.addEventListener('animationend',function(e){
   if(e.target && e.target.classList) e.target.classList.remove('anim-fwd','anim-back');
@@ -307,8 +318,9 @@ function switchAuthTab(name){
 }
 /* authLogin / authSignup / authForgot / authLogout live in
    auth.js, backed by Supabase Auth (FGSGAuth). */
-/* view switching — the incoming view slides in from the side
-   it sits on in VIEW_ORDER */
+/* view switching — going back slides the incoming view in
+   from the left; going forward shows it instantly with no
+   slide or fade (see slideIn above for why) */
 var currentViewName='home';
 function showView(name){
   if(name!=='application' && typeof liveRunning!=='undefined' && liveRunning && typeof liveReset==='function'){ liveReset(); }
@@ -332,8 +344,8 @@ var step=1, totalSteps=6, liveDone=false, feeDone=false, lastRenderedStep=null;
 var titles={1:'Start your application',2:'Personal details',3:'Institution & course',4:'Academic details',5:'Background details',6:'Documents & identity',7:'Verification fee — Paystack',8:'Pending — Waiting for Approval'};
 function renderStep(){
   document.querySelectorAll('.fstep').forEach(function(f){f.classList.toggle('active',+f.dataset.step===step)});
-  /* steps slide in the direction of travel: Continue from the
-     right, Back from the left */
+  /* steps follow the same rule as views: Back slides in from
+     the left, Continue shows the next step instantly */
   var activeStepEl=document.querySelector('.fstep.active');
   if(activeStepEl && lastRenderedStep!==null && lastRenderedStep!==step){
     slideIn(activeStepEl, step<lastRenderedStep?'back':'fwd');
