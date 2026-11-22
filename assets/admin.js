@@ -118,6 +118,7 @@ function adminLogout(){
     }
   } catch(e){}
   state.apps = []; state.reviews = []; state.selectedId = null;
+  showListView();
   resetLoginGate();
   showAdminLogin();
   if (typeof toast === 'function') toast('Admin logged out');
@@ -186,7 +187,28 @@ function adminGateLogin(){
 }
 
 /* ---------- live data from Supabase ---------- */
-var state = { apps: [], documents: [], payments: [], withdrawals: [], transactions: [], reviews: [], reviewsError: '', profilesCount: null, loading: false, selectedId: null, loadError: '' };
+var state = { apps: [], documents: [], payments: [], withdrawals: [], transactions: [], reviews: [], reviewsError: '', profilesCount: null, profiles: [], profilesById: {}, loading: false, selectedId: null, loadError: '' };
+
+/* Student email: the applications row does not carry it, so it
+   is resolved from the application itself when present, else
+   from the matching profiles row (keyed by the auth user id). */
+function emailFor(app){
+  if (!app) return '';
+  if (app.email) return String(app.email);
+  if (app.student_email) return String(app.student_email);
+  if (app.user_email) return String(app.user_email);
+  var p = app.user_id ? state.profilesById[app.user_id] : null;
+  if (p) return String(p.email || p.student_email || p.user_email || '');
+  return '';
+}
+function showListView(){
+  var lv = $('adminListView'); if (lv) lv.style.display = 'block';
+  var d = $('adminDetail'); if (d) d.style.display = 'none';
+}
+function showDetailView(){
+  var lv = $('adminListView'); if (lv) lv.style.display = 'none';
+  var d = $('adminDetail'); if (d) d.style.display = 'block';
+}
 
 function setDashMsg(msg, kind){
   var el = $('adminDashMsg'); if (!el) return;
@@ -233,6 +255,16 @@ async function loadAdminData(){
       var pc = await fgsgDb.from('profiles').select('*', {count: 'exact', head: true});
       state.profilesCount = (!pc.error && typeof pc.count === 'number') ? pc.count : null;
     } catch(e){ state.profilesCount = null; }
+    /* Profiles carry the student email shown on the compact
+       list cards — best-effort, like the other supporting tables. */
+    try {
+      state.profiles = await fetchAll('profiles', null, true);
+      state.profilesById = {};
+      state.profiles.forEach(function(p){
+        if (p && p.id) state.profilesById[p.id] = p;
+        if (p && p.user_id) state.profilesById[p.user_id] = p;
+      });
+    } catch(e){ state.profiles = []; state.profilesById = {}; }
     setDashMsg(apps.length ? '' : 'No applications found in Supabase for this view. If students have applied, the admin account needs a Supabase policy that can read all applications (RLS currently lets each student see only their own rows).', apps.length ? '' : 'info');
   } catch(err){
     state.apps = [];
@@ -245,7 +277,7 @@ async function loadAdminData(){
   renderList();
   if (state.selectedId) {
     var still = state.apps.find(function(a){ return a.id === state.selectedId; });
-    if (still) renderDetail(still); else { state.selectedId = null; var d = $('adminDetail'); if (d) d.style.display = 'none'; }
+    if (still) renderDetail(still); else { state.selectedId = null; showListView(); }
   }
 }
 
@@ -300,7 +332,7 @@ function filteredApps(){
     if (inst && a.institution_name !== inst) return false;
     if (stateF && a.state_of_origin !== stateF) return false;
     if (q){
-      var hay = [a.full_name, a.matric_number, a.institution_name, a.department, a.state_of_origin, a.lga, a.level, a.reference, serialFor(idx)].join(' ').toLowerCase();
+      var hay = [a.full_name, emailFor(a), a.matric_number, a.institution_name, a.department, a.state_of_origin, a.lga, a.level, a.reference, serialFor(idx)].join(' ').toLowerCase();
       if (hay.indexOf(q) < 0) return false;
     }
     return true;
@@ -317,33 +349,26 @@ function renderList(){
     wrap.innerHTML = '<div class="admin-empty">' + (state.apps.length ? 'No applications match your search or filters' : 'No applications yet') + '</div>';
     return;
   }
-  var html = '<table class="admin-table"><thead><tr>' +
-    '<th>Serial</th><th>Student</th><th>Matric No.</th><th>Institution</th><th>Level</th><th>Department</th><th>State</th><th>LGA</th><th>Status</th><th>Submitted</th>' +
-    '</tr></thead><tbody>';
+  /* Compact list: each card shows ONLY the student's name and
+     email. Tapping a card opens that student's separate detail
+     page (renderDetail hides the list view). */
+  var html = '<div class="admin-student-list">';
   rows.forEach(function(a){
-    var st = statusOf(a);
-    html += '<tr data-admin-app="' + esc(a.id) + '" tabindex="0" role="button" aria-label="View ' + esc(a.full_name || 'student') + '">' +
-      '<td data-label="Serial">' + esc(serialFor(a.__serialIndex)) + '</td>' +
-      '<td data-label="Student" class="a-main"><span class="a-name">' + esc(a.full_name || '—') + '</span></td>' +
-      '<td data-label="Matric No.">' + esc(a.matric_number || '—') + '</td>' +
-      '<td data-label="Institution">' + esc(a.institution_name || '—') + '</td>' +
-      '<td data-label="Level">' + esc(a.level || '—') + '</td>' +
-      '<td data-label="Department">' + esc(a.department || '—') + '</td>' +
-      '<td data-label="State">' + esc(a.state_of_origin || '—') + '</td>' +
-      '<td data-label="LGA">' + esc(a.lga || '—') + '</td>' +
-      '<td data-label="Status"><span class="admin-status ' + esc(st) + '">' + esc(st) + '</span></td>' +
-      '<td data-label="Submitted">' + esc(fmtDate(a.submitted_at || a.created_at)) + '</td>' +
-      '</tr>';
+    var email = emailFor(a);
+    html += '<button type="button" class="admin-student-card" data-admin-app="' + esc(a.id) + '" aria-label="View ' + esc(a.full_name || 'student') + '">' +
+      '<span class="asc-main"><span class="asc-name">' + esc(a.full_name || '—') + '</span>' +
+      '<span class="asc-email">' + esc(email || '—') + '</span></span>' +
+      '<span class="asc-chev" aria-hidden="true">›</span>' +
+      '</button>';
   });
-  html += '</tbody></table>';
+  html += '</div>';
   wrap.innerHTML = html;
   wrap.querySelectorAll('[data-admin-app]').forEach(function(row){
     var open = function(){
       var app = state.apps.find(function(a){ return a.id === row.getAttribute('data-admin-app'); });
-      if (app){ state.selectedId = app.id; renderDetail(app); var d = $('adminDetail'); if (d) d.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+      if (app){ state.selectedId = app.id; renderDetail(app); window.scrollTo({top: 0}); }
     };
     row.addEventListener('click', open);
-    row.addEventListener('keydown', function(e){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); open(); } });
   });
 }
 
@@ -425,7 +450,7 @@ function reviewSectionHtml(app, docs){
     h += '<div class="review-item-head"><b>' + esc(def.label) + '</b><span class="review-pill ' + reviewStatusClass(st) + '">' + esc(reviewStatusLabel(st)) + '</span></div>';
     h += '<p class="review-value">' + esc(val.text) + (val.docIndex >= 0 ? ' <button type="button" class="btn btn-outline-dark review-view-btn" data-admin-doc="' + val.docIndex + '">View</button>' : '') + '</p>';
     if (latest && latest.reason) h += '<p class="review-reason"><span>Reason</span> ' + esc(latest.reason) + '</p>';
-    h += '<label class="review-reason-label">Reason<textarea class="review-reason-input" data-review-reason="' + esc(def.key) + '" rows="2" placeholder="Reason for decline / resend"></textarea></label>';
+    h += '<label class="review-reason-label">Reason<textarea class="review-reason-input" data-review-reason="' + esc(def.key) + '" rows="1" placeholder="Reason for decline / resend"></textarea></label>';
     h += '<div class="review-actions">' +
       '<button type="button" class="btn btn-green" data-review-action="accepted" data-review-key="' + esc(def.key) + '">Accept</button>' +
       '<button type="button" class="btn btn-reject" data-review-action="declined" data-review-key="' + esc(def.key) + '">Decline</button>' +
@@ -508,11 +533,12 @@ function renderDetail(app){
 
   var html = '';
   html += '<button type="button" class="btn btn-outline-dark" id="adminDetailBack">← Back to list</button>';
-  html += '<h3 style="margin-top:16px">' + esc(app.full_name || 'Student') + ' <span class="admin-status ' + esc(st) + '">' + esc(st) + '</span></h3>';
+  html += '<h3 style="margin-top:12px">' + esc(app.full_name || 'Student') + ' <span class="admin-status ' + esc(st) + '">' + esc(st) + '</span></h3>';
   html += '<div class="admin-detail-grid">' +
     kv('Serial No.', serialFor(app.__serialIndex || 0)) +
     kv('Reference', app.reference) +
     kv('Full name', app.full_name) +
+    kv('Email', emailFor(app) || null) +
     kv('Matric / Reg. Number', app.matric_number) +
     kv('Date of birth', fmtDate(app.date_of_birth)) +
     kv('Phone number', app.phone_number) +
@@ -576,10 +602,12 @@ function renderDetail(app){
     if (!_allAcc) html += '<p class="review-gate-note">Approve is locked until every item above is Accepted. The application stays Pending while any item is awaiting review, declined, asked to resend, or resubmitted.</p>';
   }
   box.innerHTML = html;
-  box.style.display = 'block';
+  /* The detail is its own page: the list view (stats, filters
+     and student cards) is hidden while it is open. */
+  showDetailView();
 
   var back = $('adminDetailBack');
-  if (back) back.addEventListener('click', function(){ box.style.display = 'none'; state.selectedId = null; var w = $('adminListWrap'); if (w) w.scrollIntoView({behavior: 'smooth', block: 'start'}); });
+  if (back) back.addEventListener('click', function(){ state.selectedId = null; showListView(); window.scrollTo({top: 0}); });
   box.querySelectorAll('[data-admin-doc]').forEach(function(btn){
     btn.addEventListener('click', function(){ openDocument(docs[Number(btn.getAttribute('data-admin-doc'))], btn); });
   });

@@ -38,7 +38,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/styles.css?v=48">
-<link rel="stylesheet" href="assets/admin.css?v=8">
+<link rel="stylesheet" href="assets/admin.css?v=9">
 <link rel="stylesheet" href="assets/dock.css?v=2">
 </head>
 <body>
@@ -575,6 +575,9 @@
         </div>
       </div>
 
+      <div class="admin-msg" id="adminDashMsg" role="alert"></div>
+
+      <div id="adminListView">
       <div class="admin-stats" aria-label="Live statistics">
         <div class="admin-stat"><small>Total Students</small><b id="adminStatTotal">0</b></div>
         <div class="admin-stat"><small>Pending Applications</small><b id="adminStatPending">0</b></div>
@@ -583,10 +586,8 @@
         <div class="admin-stat"><small>Verification Fees Collected</small><b id="adminStatFees">₦0</b></div>
       </div>
 
-      <div class="admin-msg" id="adminDashMsg" role="alert"></div>
-
       <div class="admin-controls">
-        <label>Search<input type="text" id="adminSearch" placeholder="Name, matric, institution, reference…" autocomplete="off"></label>
+        <label>Search<input type="text" id="adminSearch" placeholder="Name, email, matric, institution, reference…" autocomplete="off"></label>
         <label>Status
           <select id="adminFilterStatus">
             <option value="">All statuses</option>
@@ -602,6 +603,7 @@
       <p class="admin-count" id="adminListCount"></p>
       <div class="admin-table-card" id="adminListWrap">
         <div class="admin-empty">No applications yet</div>
+      </div>
       </div>
 
       <div class="admin-detail" id="adminDetail" style="display:none"></div>
@@ -730,7 +732,7 @@
 <script src="assets/liveness.js?v=20"></script>
 <script src="assets/payment.js?v=29"></script>
 <script src="assets/reviews.js?v=4"></script>
-<script src="assets/admin.js?v=10"></script>
+<script src="assets/admin.js?v=11"></script>
 <script src="assets/dock.js?v=2"></script>
 </body>
 </html>
