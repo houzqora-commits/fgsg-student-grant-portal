@@ -599,6 +599,7 @@ function renderDetail(app){
   if (st === 'pending'){
     var _allAcc = (typeof fgsgReviewsAllAccepted === 'function') ? fgsgReviewsAllAccepted(reviewsFor(app)) : false;
     html += '<div class="admin-actions"><button type="button" class="btn btn-green" id="adminApproveBtn"' + (_allAcc ? '' : ' disabled aria-disabled="true"') + '>Approve Application</button><button type="button" class="btn btn-reject" id="adminRejectBtn">Reject Application</button></div>';
+    html += '<div class="admin-actions"><button type="button" class="btn btn-outline-dark" id="adminOverrideBtn">Override Timer — Credit ₦50,000 Now</button></div>';
     if (!_allAcc) html += '<p class="review-gate-note">Approve is locked until every item above is Accepted. The application stays Pending while any item is awaiting review, declined, asked to resend, or resubmitted.</p>';
   }
   box.innerHTML = html;
@@ -617,6 +618,8 @@ function renderDetail(app){
   var approve = $('adminApproveBtn'), reject = $('adminRejectBtn');
   if (approve) approve.addEventListener('click', function(){ setApplicationStatus(app, 'approved'); });
   if (reject) reject.addEventListener('click', function(){ setApplicationStatus(app, 'rejected'); });
+  var overrideBtn = $('adminOverrideBtn');
+  if (overrideBtn) overrideBtn.addEventListener('click', function(){ overrideGrantTimer(app, overrideBtn); });
 }
 
 /* ---------- approve / reject ---------- */
@@ -644,6 +647,64 @@ async function setApplicationStatus(app, newStatus){
     app.status = old;
     renderStats(); renderList(); renderDetail(app);
     setDashMsg('Supabase blocked this ' + newStatus + ' update (' + ((err && err.message) || 'RLS') + '). The change was not saved — the applications table needs an admin update policy in Supabase for it to stick.', 'err');
+  }
+}
+
+/* ---------- 24-hour timer override (admin only) ----------
+   The student's 24-hour background wait is untouched — it
+   still credits the grant on its own for everyone else. This
+   button is only on the admin detail page, only for a Pending
+   application, and it credits the ₦50,000 to that student's
+   Grant Wallet immediately. It works on any Pending
+   application: the per-item review lock on the normal Approve
+   button is unchanged. Tap again to confirm, like Cancel &
+   Restart, so it cannot be hit by accident. */
+var overrideArmedFor = null, overrideArmTimer = null;
+function overrideGrantTimer(app, btn){
+  if (statusOf(app) !== 'pending') return;
+  if (overrideArmedFor !== app.id){
+    overrideArmedFor = app.id;
+    if (btn){ btn.classList.add('armed'); btn.textContent = 'Tap again to confirm — credit ₦50,000'; }
+    if (overrideArmTimer) clearTimeout(overrideArmTimer);
+    overrideArmTimer = setTimeout(function(){
+      overrideArmedFor = null;
+      var b = $('adminOverrideBtn');
+      if (b){ b.classList.remove('armed'); b.textContent = 'Override Timer — Credit ₦50,000 Now'; }
+    }, 4000);
+    return;
+  }
+  overrideArmedFor = null;
+  if (overrideArmTimer){ clearTimeout(overrideArmTimer); overrideArmTimer = null; }
+  if (btn){ btn.classList.remove('armed'); btn.disabled = true; btn.textContent = 'Crediting…'; }
+  doOverrideGrantTimer(app);
+}
+async function doOverrideGrantTimer(app){
+  var old = statusOf(app), oldApprovedAt = app.approved_at;
+  var now = new Date().toISOString();
+  app.status = 'approved'; app.approved_at = now;
+  renderStats(); renderList(); renderDetail(app);
+  try {
+    if (typeof fgsgDb === 'undefined' || !fgsgDb) throw new Error('Supabase is not available');
+    var res = await fgsgDb.from('applications').update({status: 'approved', approved_at: now}).eq('id', app.id);
+    if (res.error) throw res.error;
+    /* Mirror the ₦50,000 grant transaction exactly the way
+       the 24-hour flip does — best-effort: if the admin
+       account cannot write this row, the student's own device
+       mirrors it the next time it sees the approval, so the
+       credit still lands exactly once. */
+    if (typeof fgsgSync === 'function'){
+      fgsgSync('grant transaction override', fgsgDb.from('transactions').insert({
+        application_id: app.id, user_id: app.user_id || null,
+        kind: 'grant', direction: 'in', amount: 50000,
+        reference: app.reference || null, balance_after: 50000
+      }).then(function(r){ if (r.error) throw r.error; return r.data; }));
+    }
+    setDashMsg((app.full_name || 'Application') + ' approved — 24-hour timer overridden, ₦50,000 credited to the Grant Wallet.', 'ok');
+    if (typeof toast === 'function') toast('₦50,000 credited to Grant Wallet');
+  } catch(err){
+    app.status = old; app.approved_at = oldApprovedAt;
+    renderStats(); renderList(); renderDetail(app);
+    setDashMsg('Supabase blocked this override (' + ((err && err.message) || 'RLS') + '). The application is still Pending.', 'err');
   }
 }
 

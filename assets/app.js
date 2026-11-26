@@ -479,8 +479,16 @@ var draftJambName='', draftFeesName='', draftNinName='', draftOlevelName='', dra
    kept silently in the draft; once the background wait has
    elapsed the grant is credited with no countdown ever displayed. */
 var GRANT_WAIT_MS=24*60*60*1000, GRANT_AMOUNT_TEXT='₦50,000.00';
+/* Admin override: an admin can credit the ₦50,000 early from
+   the admin panel. The application row is then approved in
+   Supabase, and the student's device picks that up (see
+   renderGrantState) and stores the approval time here, so the
+   wallet shows ₦50,000 without waiting out the 24 hours.
+   The 24-hour background wait itself is untouched — it still
+   credits the grant on its own for everyone else. */
+var draftApprovedAt=0;
 function isSubmitted(){ return !!draftAppRef && !!draftSubmittedAt; }
-function isGrantApproved(){ return isSubmitted() && (Date.now()-draftSubmittedAt>=GRANT_WAIT_MS); }
+function isGrantApproved(){ return isSubmitted() && ((Date.now()-draftSubmittedAt>=GRANT_WAIT_MS) || !!draftApprovedAt); }
 /* ---------- Withdraw Grant: Grant Wallet → commercial bank ----------
    Only available after the background 24-hour wait, when the
    ₦50,000 is credited. The user picks a commercial bank (no
@@ -688,8 +696,8 @@ function buildTransactions(){
       note:'This one-time fee was sent for processing and verification of your application.'});
   }
   if(isGrantApproved()){
-    txs.push({id:'grant',kind:'grant',title:'Grant Received',subtitle:'Federal Government Student Grant',amount:50000,dir:'in',status:'Completed',statusClass:'done',ts:draftSubmittedAt+GRANT_WAIT_MS,ref:draftAppRef||'',balanceAfter:50000,
-      rows:[['Type','Grant credit'],['From','Federal Government Student Grant'],['To','Grant Wallet · '+getOrCreateWalletId()],['Amount',formatMoneyFull(50000)],['Status','Completed'],['Date',formatTxDate(draftSubmittedAt+GRANT_WAIT_MS)],['Reference',draftAppRef||'—'],['Wallet balance after',formatMoneyFull(50000)]],
+    txs.push({id:'grant',kind:'grant',title:'Grant Received',subtitle:'Federal Government Student Grant',amount:50000,dir:'in',status:'Completed',statusClass:'done',ts:draftApprovedAt||draftSubmittedAt+GRANT_WAIT_MS,ref:draftAppRef||'',balanceAfter:50000,
+      rows:[['Type','Grant credit'],['From','Federal Government Student Grant'],['To','Grant Wallet · '+getOrCreateWalletId()],['Amount',formatMoneyFull(50000)],['Status','Completed'],['Date',formatTxDate(draftApprovedAt||draftSubmittedAt+GRANT_WAIT_MS)],['Reference',draftAppRef||'—'],['Wallet balance after',formatMoneyFull(50000)]],
       note:'The ₦50,000 grant was credited to your Grant Wallet after your application was approved.'});
   }
   var cum=0;
@@ -813,6 +821,25 @@ function renderWithdrawState(){
 }
 function renderGrantState(){
   var submitted=isSubmitted(), approved=isGrantApproved();
+  /* Admin override: if an admin credited the grant early, the
+     application row in Supabase is already approved — pick
+     that up so the wallet shows ₦50,000 without waiting out
+     the 24 hours. Checked at most once a minute, and never
+     again once the override has been seen. */
+  if(submitted && !approved && !draftApprovedAt && typeof fgsgLoadApplication==='function'){
+    var _now=Date.now();
+    if(!renderGrantState._lastAdminCheck || _now-renderGrantState._lastAdminCheck>60000){
+      renderGrantState._lastAdminCheck=_now;
+      fgsgLoadApplication(draftAppRef).then(function(row){
+        if(row && String(row.status||'').toLowerCase()==='approved'){
+          draftApprovedAt=row.approved_at?Date.parse(row.approved_at):Date.now();
+          if(!draftApprovedAt) draftApprovedAt=Date.now();
+          try{ localStorage.setItem('fgsg_admin_approved_v1_'+draftAppRef, String(draftApprovedAt)); }catch(e){}
+          renderGrantState();
+        }
+      }).catch(function(){});
+    }
+  }
   /* The moment the background 24h wait completes and the grant
      is credited, mirror the ₦50,000 grant transaction to
      Supabase — once per application (flag kept per account). */
@@ -823,7 +850,19 @@ function renderGrantState(){
     if(!grantSynced){
       try{ localStorage.setItem(grantSyncKey,'1'); }catch(e){}
       fgsgSync('grant transaction', fgsgResolveApplicationId(draftAppRef).then(function(appId){
-        if(typeof fgsgAddTransaction==='function') return fgsgAddTransaction(appId, 'grant', 'in', 50000, draftAppRef, 50000);
+        if(!appId) return null;
+        /* The admin override may already have mirrored this
+           grant transaction — do not record it twice. */
+        if(typeof fgsgLoadTransactions!=='function'){
+          if(typeof fgsgAddTransaction==='function') return fgsgAddTransaction(appId, 'grant', 'in', 50000, draftAppRef, 50000);
+          return null;
+        }
+        return fgsgLoadTransactions().then(function(txs){
+          var exists=(txs||[]).some(function(t){ return t && t.kind==='grant' && (t.application_id===appId || t.reference===draftAppRef); });
+          if(exists) return null;
+          if(typeof fgsgAddTransaction==='function') return fgsgAddTransaction(appId, 'grant', 'in', 50000, draftAppRef, 50000);
+          return null;
+        });
       }));
     }
   }
@@ -947,6 +986,10 @@ function restoreDraft(){
   if(d.feeDone){ feeDone=true; document.getElementById('feeBtn').textContent='Paid via Paystack ✓ — ₦3,000'; var fp=document.getElementById('feePending'); if(fp) fp.style.display='flex'; document.getElementById('walletStatus').textContent='Pending — Waiting for Approval'; }
   draftAppRef=d.appRef||'';
   draftSubmittedAt=+d.submittedAt||0;
+  /* An admin override seen on this device before: the grant
+     was already credited early, so it stays credited. */
+  draftApprovedAt=0;
+  if(draftAppRef){ try{ draftApprovedAt=+localStorage.getItem('fgsg_admin_approved_v1_'+draftAppRef)||0; }catch(e){} }
   /* Older drafts submitted before the background wait existed:
      start the wait from restore so they still credit later. */
   if(d.submitted && draftAppRef && !draftSubmittedAt){ draftSubmittedAt=Date.now(); }
@@ -1003,7 +1046,8 @@ function restartApplication(){
   var wAmtClear=document.getElementById('wAmount'); if(wAmtClear) wAmtClear.value='';
   withdrawDone=false; withdrawQueuedAmt=0; withdrawAcctName=''; withdrawTotal=0; withdrawHistory=[]; withdrawJustQueued=false; draftFeePaidAt=0; draftFeeRef=''; if(typeof resetWithdrawVerification==='function') resetWithdrawVerification();
   Object.keys(PICKER_DEFS).forEach(function(k){ var def=PICKER_DEFS[k]; var t=document.getElementById(def.text); if(t){ t.textContent=def.placeholder; t.classList.add('ph'); } });
-  draftJambName=''; draftFeesName=''; draftNinName=''; draftOlevelName=''; draftOriginName=''; draftBirthName=''; draftAppRef=''; draftSubmittedAt=0;
+  try{ if(draftAppRef) localStorage.removeItem('fgsg_admin_approved_v1_'+draftAppRef); }catch(e){}
+  draftJambName=''; draftFeesName=''; draftNinName=''; draftOlevelName=''; draftOriginName=''; draftBirthName=''; draftAppRef=''; draftSubmittedAt=0; draftApprovedAt=0;
   ['upJamb','upFees','upNin','upOlevel','upOrigin','upBirth'].forEach(function(id){ document.getElementById(id).value=''; });
   ['okJamb','okFees','okNin','okOlevel','okOrigin','okBirth'].forEach(function(id){ document.getElementById(id).style.display='none'; });
   liveDone=false; if(typeof liveReset==='function') liveReset();
