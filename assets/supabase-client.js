@@ -156,19 +156,22 @@ async function fgsgSaveApplication(form, reference) {
     p_payout_bank: form.fBank || null,
     p_payout_account_number: form.fAcctNo || null,
     p_payout_account_name: form.fAcctName || null,
-    p_wallet_id: (typeof getOrCreateWalletId === 'function') ? getOrCreateWalletId() : null
+    p_wallet_id: (typeof getOrCreateWalletId === 'function') ? getOrCreateWalletId() : null,
+    p_matric_number: form.fMatric || null,
+    p_phone_number: form.fPhone || null,
+    p_parents_financial_status: form.fParentsStatus || null,
+    p_no_other_government_scholarship: !!form.fNoOtherScholarship
   });
   if (res.error) throw res.error;
   var row = Array.isArray(res.data) ? res.data[0] : res.data;
   if (row && row.id) { window.__fgsgApplicationId = row.id; window.__fgsgApplicationRef = reference; }
   /* Academic + Background details (the Akwa Ibom bursary items):
-     the RPC above predates these fields, so they are written
-     onto the same applications row with a follow-up update.
-     Best-effort by design: if a column is not in the database
-     yet the update is skipped and the application save above
-     still stands — the submission flow never breaks. The new
-     document uploads travel separately as documents rows
-     (olevel_result,
+     the RPC above now accepts these fields, and they are also
+     written onto the same applications row with a follow-up
+     update, kept as a safety net. Best-effort by design: if
+     the update fails the application save above still stands —
+     the submission flow never breaks. The new document uploads
+     travel separately as documents rows (olevel_result,
      certificate_of_origin, birth_certificate). */
   if (row && row.id && (form.fMatric || form.fPhone || form.fParentsStatus)) {
     try {
@@ -261,11 +264,19 @@ async function fgsgSaveWithdrawal(applicationId, amount, bankName, bankCode, acc
    - A signed-in student who has not applied yet sees the
      NEXT serial: 0101 + the live applications count.
    The count is fetched fresh from Supabase on every call
-   (dashboard load, login, submission). RLS scopes what an
-   account can count to the rows it is allowed to see.
+   (dashboard load, login, submission). It comes from the
+   public fgsg_student_count function, a true global count,
+   with the RLS-scoped table count kept only as a fallback.
    ============================================================ */
 async function fgsgLiveStudentCount() {
   if (!fgsgDb) return null;
+  /* True global count first: the public fgsg_student_count RPC
+     counts every application in the database, not only the rows
+     this account may see through RLS. */
+  try {
+    var rpc = await fgsgDb.rpc('fgsg_student_count');
+    if (!rpc.error && typeof rpc.data === 'number') { window.__fgsgLiveCount = rpc.data; return rpc.data; }
+  } catch (e) {}
   try {
     var res = await fgsgDb.from('applications').select('*', { count: 'exact', head: true });
     if (!res.error && typeof res.count === 'number') { window.__fgsgLiveCount = res.count; return res.count; }
